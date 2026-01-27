@@ -64,3 +64,33 @@ npm run format:check # Check formatting
 - Tailwind CSS 4.x uses `@import 'tailwindcss'` syntax
 - Vitest configured with jsdom environment for React testing
 - ESLint 9 with flat config
+- React 19 with strict mode enabled
+
+## Keyboard Shortcuts (VIM-like)
+
+Navigation:
+- `h` / `ArrowLeft` - Go to parent
+- `l` / `ArrowRight` - Go to first child
+- `j` / `ArrowDown` - Go to next sibling
+- `k` / `ArrowUp` - Go to previous sibling
+
+Editing:
+- `a` - Create child node (enters insert mode)
+- `o` - Create sibling node (enters insert mode)
+- `i` - Enter insert mode
+- `dd` - Delete node (leaf only)
+- `gd` - Delete node with children
+- `cin` - Clear content and enter insert mode
+
+Mode:
+- `Escape` - Exit insert mode
+
+Search:
+- `/` - Open search modal
+- `Cmd/Ctrl+K` - Open command palette
+
+## ESLint Rules to Watch
+
+- `react-hooks/set-state-in-effect` - Don't call setState in effects
+- `react-hooks/refs` - Don't access refs during render
+- Use `clampedIndex` pattern instead of effect-based index reset
