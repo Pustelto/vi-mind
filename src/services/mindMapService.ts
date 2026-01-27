@@ -1,0 +1,140 @@
+import type { MindMapNode, NodeId, Result } from '../types';
+import type { Repository } from '../storage/repository';
+
+export interface MindMapService {
+  getAllNodes(): Promise<MindMapNode[]>;
+  getNode(id: NodeId): Promise<MindMapNode | null>;
+  getChildren(parentId: NodeId): Promise<MindMapNode[]>;
+  getParent(nodeId: NodeId): Promise<MindMapNode | null>;
+  getSiblings(nodeId: NodeId): Promise<MindMapNode[]>;
+  hasChildren(nodeId: NodeId): Promise<boolean>;
+
+  getParentId(nodeId: NodeId): Promise<NodeId | null>;
+  getFirstChildId(nodeId: NodeId): Promise<NodeId | null>;
+  getNextSiblingId(nodeId: NodeId): Promise<NodeId | null>;
+  getPreviousSiblingId(nodeId: NodeId): Promise<NodeId | null>;
+
+  createNode(content: string, parentId: NodeId | null): Promise<MindMapNode>;
+  updateContent(nodeId: NodeId, content: string): Promise<MindMapNode>;
+  deleteNode(nodeId: NodeId): Promise<Result<void, string>>;
+  deleteNodeWithChildren(nodeId: NodeId): Promise<void>;
+
+  ensureRootExists(): Promise<MindMapNode>;
+}
+
+export function createMindMapService(repository: Repository): MindMapService {
+  const generateId = (): NodeId => crypto.randomUUID();
+
+  const getAllNodes = () => repository.findAll();
+
+  const getNode = (id: NodeId) => repository.findById(id);
+
+  const getChildren = (parentId: NodeId) => repository.findByParentId(parentId);
+
+  const getParent = async (nodeId: NodeId): Promise<MindMapNode | null> => {
+    const node = await repository.findById(nodeId);
+    if (!node?.parentId) return null;
+    return repository.findById(node.parentId);
+  };
+
+  const getSiblings = async (nodeId: NodeId): Promise<MindMapNode[]> => {
+    const node = await repository.findById(nodeId);
+    if (!node) return [];
+    const siblings = await repository.findByParentId(node.parentId);
+    return siblings.filter((n) => n.id !== nodeId);
+  };
+
+  const hasChildren = async (nodeId: NodeId): Promise<boolean> => {
+    const children = await repository.findByParentId(nodeId);
+    return children.length > 0;
+  };
+
+  const createNode = async (content: string, parentId: NodeId | null): Promise<MindMapNode> => {
+    const node: MindMapNode = { id: generateId(), content, parentId };
+    await repository.save(node);
+    return node;
+  };
+
+  const updateContent = async (nodeId: NodeId, content: string): Promise<MindMapNode> => {
+    const node = await repository.findById(nodeId);
+    if (!node) throw new Error(`Node not found: ${nodeId}`);
+    const updated = { ...node, content };
+    await repository.save(updated);
+    return updated;
+  };
+
+  const deleteNode = async (nodeId: NodeId): Promise<Result<void, string>> => {
+    const node = await repository.findById(nodeId);
+    if (!node) return { ok: false, error: 'Node not found' };
+    if (node.parentId === null) return { ok: false, error: 'Cannot delete root node' };
+    if (await hasChildren(nodeId)) return { ok: false, error: 'Node has children' };
+    await repository.delete(nodeId);
+    return { ok: true, value: undefined };
+  };
+
+  const deleteNodeWithChildren = async (nodeId: NodeId): Promise<void> => {
+    const children = await getChildren(nodeId);
+    for (const child of children) {
+      await deleteNodeWithChildren(child.id);
+    }
+    await repository.delete(nodeId);
+  };
+
+  const ensureRootExists = async (): Promise<MindMapNode> => {
+    const all = await getAllNodes();
+    const root = all.find((n) => n.parentId === null);
+    if (root) return root;
+    return createNode('Root', null);
+  };
+
+  const getParentId = async (nodeId: NodeId): Promise<NodeId | null> => {
+    const parent = await getParent(nodeId);
+    return parent?.id ?? null;
+  };
+
+  const getFirstChildId = async (nodeId: NodeId): Promise<NodeId | null> => {
+    const children = await getChildren(nodeId);
+    return children[0]?.id ?? null;
+  };
+
+  const getSiblingsWithSelf = async (nodeId: NodeId): Promise<{ ids: NodeId[]; index: number }> => {
+    const node = await getNode(nodeId);
+    if (!node) return { ids: [], index: -1 };
+    const siblings =
+      node.parentId === null
+        ? (await getAllNodes()).filter((n) => n.parentId === null)
+        : await getChildren(node.parentId);
+    const index = siblings.findIndex((n) => n.id === nodeId);
+    return { ids: siblings.map((n) => n.id), index };
+  };
+
+  const getNextSiblingId = async (nodeId: NodeId): Promise<NodeId | null> => {
+    const { ids, index } = await getSiblingsWithSelf(nodeId);
+    if (index === -1 || index >= ids.length - 1) return null;
+    return ids[index + 1];
+  };
+
+  const getPreviousSiblingId = async (nodeId: NodeId): Promise<NodeId | null> => {
+    const { ids, index } = await getSiblingsWithSelf(nodeId);
+    if (index <= 0) return null;
+    return ids[index - 1];
+  };
+
+  return {
+    getAllNodes,
+    getNode,
+    getChildren,
+    getParent,
+    getSiblings,
+    hasChildren,
+    getParentId,
+    getFirstChildId,
+    getNextSiblingId,
+    getPreviousSiblingId,
+    createNode,
+    updateContent,
+    deleteNode,
+    deleteNodeWithChildren,
+    ensureRootExists,
+  };
+}
