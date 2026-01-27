@@ -1,0 +1,166 @@
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useNodeStore, useUIStore } from '../stores';
+import { createCommands } from '../input/commands';
+import type { CommandContext } from '../types';
+
+export function CommandPalette() {
+  const nodeStore = useNodeStore();
+  const uiStore = useUIStore();
+  const { isCommandPaletteOpen, closeCommandPalette } = uiStore;
+
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const allCommands = useMemo(() => createCommands(), []);
+
+  const ctx: CommandContext = useMemo(
+    () => ({
+      selectedNodeId: nodeStore.selectedNodeId,
+      mode: uiStore.mode,
+      selectNode: nodeStore.selectNode,
+      createChildNode: (parentId) => {
+        nodeStore.createChildNode(parentId);
+        uiStore.enterInsertMode();
+      },
+      createSiblingNode: (siblingId) => {
+        nodeStore.createSiblingNode(siblingId);
+        uiStore.enterInsertMode();
+      },
+      updateNodeContent: nodeStore.updateNodeContent,
+      deleteNode: async (id) => {
+        const result = await nodeStore.deleteNode(id);
+        if (!result.ok && result.error) {
+          uiStore.setError(result.error);
+        }
+      },
+      deleteNodeWithChildren: nodeStore.deleteNodeWithChildren,
+      enterInsertMode: uiStore.enterInsertMode,
+      exitInsertMode: uiStore.exitInsertMode,
+      navigateToParent: async () => {
+        const { service, selectedNodeId } = useNodeStore.getState();
+        if (!service || !selectedNodeId) return;
+        const parentId = await service.getParentId(selectedNodeId);
+        if (parentId) nodeStore.selectNode(parentId);
+      },
+      navigateToFirstChild: async () => {
+        const { service, selectedNodeId } = useNodeStore.getState();
+        if (!service || !selectedNodeId) return;
+        const childId = await service.getFirstChildId(selectedNodeId);
+        if (childId) nodeStore.selectNode(childId);
+      },
+      navigateToNextSibling: async () => {
+        const { service, selectedNodeId } = useNodeStore.getState();
+        if (!service || !selectedNodeId) return;
+        const siblingId = await service.getNextSiblingId(selectedNodeId);
+        if (siblingId) nodeStore.selectNode(siblingId);
+      },
+      navigateToPreviousSibling: async () => {
+        const { service, selectedNodeId } = useNodeStore.getState();
+        if (!service || !selectedNodeId) return;
+        const siblingId = await service.getPreviousSiblingId(selectedNodeId);
+        if (siblingId) nodeStore.selectNode(siblingId);
+      },
+      openSearch: uiStore.openSearch,
+      openCommandPalette: uiStore.openCommandPalette,
+    }),
+    [nodeStore, uiStore]
+  );
+
+  const availableCommands = useMemo(() => {
+    return allCommands
+      .filter((cmd) => cmd.modes.includes(ctx.mode))
+      .filter((cmd) => !cmd.canExecute || cmd.canExecute(ctx))
+      .filter(
+        (cmd) =>
+          !query ||
+          cmd.name.toLowerCase().includes(query.toLowerCase()) ||
+          cmd.description.toLowerCase().includes(query.toLowerCase())
+      );
+  }, [allCommands, ctx, query]);
+
+  useEffect(() => {
+    if (isCommandPaletteOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isCommandPaletteOpen]);
+
+  const handleQueryChange = (newQuery: string) => {
+    setQuery(newQuery);
+    setSelectedIndex(0);
+  };
+
+  const clampedIndex = Math.min(selectedIndex, Math.max(0, availableCommands.length - 1));
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex((i) => Math.min(i + 1, availableCommands.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex((i) => Math.max(i - 1, 0));
+        break;
+      case 'Enter': {
+        e.preventDefault();
+        const cmd = availableCommands[clampedIndex];
+        if (cmd) {
+          cmd.execute(ctx);
+          handleClose();
+        }
+        break;
+      }
+      case 'Escape':
+        e.preventDefault();
+        handleClose();
+        break;
+    }
+  };
+
+  const handleClose = () => {
+    setQuery('');
+    setSelectedIndex(0);
+    closeCommandPalette();
+  };
+
+  if (!isCommandPaletteOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center pt-20 z-50">
+      <div className="bg-white rounded-lg shadow-xl w-96 overflow-hidden">
+        <div className="px-4 py-3 border-b">
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a command..."
+            className="w-full outline-none"
+          />
+        </div>
+        <div className="max-h-64 overflow-y-auto">
+          {availableCommands.map((cmd, i) => (
+            <div
+              key={cmd.id}
+              className={`px-4 py-2 cursor-pointer flex justify-between items-center ${
+                i === clampedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
+              }`}
+              onClick={() => {
+                cmd.execute(ctx);
+                handleClose();
+              }}
+            >
+              <div>
+                <div className="font-medium">{cmd.name}</div>
+                <div className="text-sm text-gray-500">{cmd.description}</div>
+              </div>
+              <div className="text-sm text-gray-400 font-mono">{cmd.keybindings[0]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
