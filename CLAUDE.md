@@ -62,6 +62,8 @@ npm run format:check # Check formatting
 ## Implementation Notes
 
 - Tailwind CSS 4.x uses `@import 'tailwindcss'` syntax
+- Tailwind CSS 4.x requires `@tailwindcss/postcss` in postcss.config.js
+- Vitest requires `/// <reference types="vitest/config" />` (not `vitest`)
 - Vitest configured with jsdom environment for React testing
 - ESLint 9 with flat config
 - React 19 with strict mode enabled
