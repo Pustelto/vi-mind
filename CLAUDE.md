@@ -41,6 +41,21 @@ Two focused stores: `useNodeStore` (nodes, selection) and `useUIStore` (mode, mo
 ### 5. Pure Functions for Layout
 Layout calculation is a pure function: `(nodes) => LayoutResult`.
 
+### 6. Node Ordering
+Nodes have an `order` field for sibling positioning. Repository sorts children by order.
+- `createSiblingAbove` inserts before current node
+- `createSiblingBelow` inserts after current node
+
+### 7. Empty State Initialization
+- Store initializes with empty nodes (no auto-create root)
+- Pressing `a` on empty canvas creates root node
+- Welcome screen shows on empty canvas with instructions
+
+### 8. Dynamic Node Sizing
+- Node dimensions calculated from content (line count, max line length)
+- Dimensions update live during editing via callback pattern
+- Constants: MIN_NODE_WIDTH=80, MAX_NODE_WIDTH=250
+
 ## Testing
 
 - Run tests: `npm test` (watch) or `npm run test:run` (once)
@@ -77,19 +92,29 @@ Navigation:
 - `k` / `ArrowUp` - Go to previous sibling
 
 Editing:
-- `a` - Create child node (enters insert mode)
-- `o` - Create sibling node (enters insert mode)
+- `a` - Create child node (or root if empty canvas)
+- `o` - Create sibling below (disabled on root)
+- `O` - Create sibling above (disabled on root)
 - `i` - Enter insert mode
 - `dd` - Delete node (leaf only)
 - `gd` - Delete node with children
 - `cin` - Clear content and enter insert mode
 
-Mode:
-- `Escape` - Exit insert mode
+Insert Mode:
+- `Enter` - New line in node text
+- `Cmd/Ctrl+Enter` - Exit insert mode and save
+- `Escape` - Exit insert mode and save
+
+View:
+- `zz` - Fit entire mind map to screen (centered)
 
 Search:
 - `/` - Open search modal
 - `Cmd/Ctrl+K` - Open command palette
+
+Canvas:
+- Mouse wheel - Zoom in/out (centered on cursor)
+- Click and drag - Pan canvas
 
 ## ESLint Rules to Watch
 
