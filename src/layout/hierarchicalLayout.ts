@@ -17,6 +17,39 @@ interface TreeNode {
   height: number;
 }
 
+function countWrappedLines(text: string, charsPerLine: number): number {
+  const lines = text.split('\n');
+  let totalLines = 0;
+
+  for (const line of lines) {
+    if (line.length <= charsPerLine) {
+      totalLines += 1;
+    } else {
+      const words = line.split(/(\s+)/);
+      let currentLineLength = 0;
+      let lineCount = 1;
+
+      for (const word of words) {
+        if (currentLineLength + word.length <= charsPerLine) {
+          currentLineLength += word.length;
+        } else if (word.length > charsPerLine) {
+          if (currentLineLength > 0) lineCount++;
+          const extraLines = Math.ceil(word.length / (charsPerLine - 1));
+          lineCount += extraLines - 1;
+          currentLineLength = word.length % (charsPerLine - 1) || charsPerLine - 1;
+        } else {
+          lineCount++;
+          currentLineLength = word.trimStart().length;
+        }
+      }
+
+      totalLines += lineCount;
+    }
+  }
+
+  return Math.max(1, totalLines);
+}
+
 function calculateNodeDimensions(content: string): { width: number; height: number } {
   const lines = content.split('\n');
   const maxLineLength = Math.max(...lines.map((line) => line.length), 1);
@@ -24,11 +57,8 @@ function calculateNodeDimensions(content: string): { width: number; height: numb
   const textWidth = maxLineLength * CHAR_WIDTH;
   const width = Math.min(MAX_NODE_WIDTH, Math.max(MIN_NODE_WIDTH, textWidth + NODE_PADDING_X));
 
-  const wrappedLineCount = lines.reduce((count, line) => {
-    const charsPerLine = Math.floor((width - NODE_PADDING_X) / CHAR_WIDTH);
-    const lineWraps = Math.max(1, Math.ceil(line.length / charsPerLine));
-    return count + lineWraps;
-  }, 0);
+  const charsPerLine = Math.floor((width - NODE_PADDING_X) / CHAR_WIDTH);
+  const wrappedLineCount = countWrappedLines(content, charsPerLine);
 
   const height = Math.max(40, wrappedLineCount * LINE_HEIGHT + NODE_PADDING_Y);
 

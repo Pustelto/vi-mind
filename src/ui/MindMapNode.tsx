@@ -44,15 +44,38 @@ function wrapText(text: string, maxWidth: number, charWidth: number): string[] {
     if (line.length <= charsPerLine) {
       wrappedLines.push(line || ' ');
     } else {
-      let remaining = line;
-      while (remaining.length > 0) {
-        wrappedLines.push(remaining.slice(0, charsPerLine));
-        remaining = remaining.slice(charsPerLine);
+      const words = line.split(/(\s+)/);
+      let currentLine = '';
+
+      for (const word of words) {
+        if (currentLine.length + word.length <= charsPerLine) {
+          currentLine += word;
+        } else if (word.length > charsPerLine) {
+          if (currentLine) {
+            wrappedLines.push(currentLine);
+            currentLine = '';
+          }
+          let remaining = word;
+          while (remaining.length > charsPerLine) {
+            wrappedLines.push(remaining.slice(0, charsPerLine - 1) + '-');
+            remaining = remaining.slice(charsPerLine - 1);
+          }
+          currentLine = remaining;
+        } else {
+          if (currentLine.trim()) {
+            wrappedLines.push(currentLine);
+          }
+          currentLine = word.trimStart();
+        }
+      }
+
+      if (currentLine) {
+        wrappedLines.push(currentLine);
       }
     }
   }
 
-  return wrappedLines;
+  return wrappedLines.length > 0 ? wrappedLines : [' '];
 }
 
 export function MindMapNodeComponent({ node, layout, isSelected }: Props) {
@@ -74,13 +97,25 @@ export function MindMapNodeComponent({ node, layout, isSelected }: Props) {
     setEditingDimensions(calculateNodeDimensions(content));
   }, []);
 
+  const deleteNode = useNodeStore((state) => state.deleteNode);
+  const service = useNodeStore((state) => state.service);
+
   const handleEditComplete = useCallback(
-    (finalContent: string) => {
-      updateNodeContent(node.id, finalContent);
+    async (finalContent: string) => {
+      const trimmedContent = finalContent.trim();
+      if (trimmedContent === '') {
+        const parentId = service ? await service.getParentId(node.id) : null;
+        const result = await deleteNode(node.id);
+        if (result.ok && parentId) {
+          useNodeStore.getState().selectNode(parentId);
+        }
+      } else {
+        updateNodeContent(node.id, trimmedContent);
+      }
       setEditingDimensions(null);
       exitInsertMode();
     },
-    [node.id, updateNodeContent, exitInsertMode]
+    [node.id, updateNodeContent, exitInsertMode, deleteNode, service]
   );
 
 
@@ -117,6 +152,7 @@ export function MindMapNodeComponent({ node, layout, isSelected }: Props) {
         <text
           x={TEXT_PADDING}
           y={textStartY}
+          dominantBaseline="middle"
           className="text-sm fill-gray-800 pointer-events-none"
           style={{ fontSize: '14px' }}
         >
