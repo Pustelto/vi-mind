@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNodeStore, useUIStore } from '../stores';
 import { createCommands } from '../input/commands';
+import { PaletteList } from './PaletteList';
+import type { PaletteItem } from './PaletteList';
 import type { CommandContext } from '../types';
 
 export function CommandPalette() {
@@ -12,7 +14,6 @@ export function CommandPalette() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isSelectedNodeRoot, setIsSelectedNodeRoot] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
 
   const allCommands = useMemo(() => createCommands(), []);
 
@@ -118,6 +119,13 @@ export function CommandPalette() {
       );
   }, [allCommands, ctx, query]);
 
+  const items: PaletteItem[] = availableCommands.map((cmd) => ({
+    id: cmd.id,
+    primary: cmd.name,
+    secondary: cmd.description,
+    trailing: cmd.keybindings[0],
+  }));
+
   const clampedIndex = Math.min(selectedIndex, Math.max(0, availableCommands.length - 1));
 
   useEffect(() => {
@@ -126,18 +134,17 @@ export function CommandPalette() {
     }
   }, [isCommandPaletteOpen]);
 
-  useEffect(() => {
-    if (listRef.current) {
-      const selectedElement = listRef.current.children[clampedIndex] as HTMLElement;
-      if (selectedElement) {
-        selectedElement.scrollIntoView({ block: 'nearest' });
-      }
-    }
-  }, [clampedIndex]);
-
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
     setSelectedIndex(0);
+  };
+
+  const handleSelect = (index: number) => {
+    const cmd = availableCommands[index];
+    if (cmd) {
+      cmd.execute(ctx);
+      handleClose();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -152,11 +159,7 @@ export function CommandPalette() {
         break;
       case 'Enter': {
         e.preventDefault();
-        const cmd = availableCommands[clampedIndex];
-        if (cmd) {
-          cmd.execute(ctx);
-          handleClose();
-        }
+        handleSelect(clampedIndex);
         break;
       }
       case 'Escape':
@@ -188,26 +191,12 @@ export function CommandPalette() {
             className="w-full outline-none"
           />
         </div>
-        <div ref={listRef} className="max-h-80 overflow-y-auto">
-          {availableCommands.map((cmd, i) => (
-            <div
-              key={cmd.id}
-              className={`px-4 py-2 cursor-pointer flex justify-between items-center ${
-                i === clampedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
-              }`}
-              onClick={() => {
-                cmd.execute(ctx);
-                handleClose();
-              }}
-            >
-              <div>
-                <div className="font-medium">{cmd.name}</div>
-                <div className="text-sm text-gray-500">{cmd.description}</div>
-              </div>
-              <div className="text-sm text-gray-400 font-mono">{cmd.keybindings[0]}</div>
-            </div>
-          ))}
-        </div>
+        <PaletteList
+          items={items}
+          selectedIndex={selectedIndex}
+          onSelect={handleSelect}
+          emptyMessage="No commands found"
+        />
       </div>
     </div>
   );

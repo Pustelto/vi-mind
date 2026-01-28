@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNodeStore, useUIStore } from '../stores';
 import { createSearchService } from '../services/searchService';
+import { PaletteList } from './PaletteList';
+import type { PaletteItem } from './PaletteList';
 
 export function SearchModal() {
   const nodes = useNodeStore((state) => state.nodes);
@@ -15,7 +17,14 @@ export function SearchModal() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const results = query ? searchService.search(query) : nodes.map((n) => ({ nodeId: n.id, content: n.content }));
+  const results = query
+    ? searchService.search(query)
+    : nodes.map((n) => ({ nodeId: n.id, content: n.content }));
+
+  const items: PaletteItem[] = results.map((result) => ({
+    id: result.nodeId,
+    primary: result.content || <span className="text-gray-400 italic">Empty node</span>,
+  }));
 
   useEffect(() => {
     if (isSearchOpen && inputRef.current) {
@@ -30,6 +39,18 @@ export function SearchModal() {
 
   const clampedIndex = Math.min(selectedIndex, Math.max(0, results.length - 1));
 
+  const handleSelect = (index: number) => {
+    const result = results[index];
+    if (result) {
+      const nodeId = result.nodeId;
+      selectNode(nodeId);
+      handleClose();
+      requestAnimationFrame(() => {
+        if (focusNode) focusNode(nodeId);
+      });
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
@@ -42,14 +63,7 @@ export function SearchModal() {
         break;
       case 'Enter':
         e.preventDefault();
-        if (results[clampedIndex]) {
-          const nodeId = results[clampedIndex].nodeId;
-          selectNode(nodeId);
-          handleClose();
-          requestAnimationFrame(() => {
-            if (focusNode) focusNode(nodeId);
-          });
-        }
+        handleSelect(clampedIndex);
         break;
       case 'Escape':
         e.preventDefault();
@@ -81,30 +95,12 @@ export function SearchModal() {
             className="flex-1 outline-none"
           />
         </div>
-        {results.length > 0 ? (
-          <div className="max-h-80 overflow-y-auto">
-            {results.map((result, i) => (
-              <div
-                key={result.nodeId}
-                className={`px-4 py-2 cursor-pointer ${
-                  i === clampedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
-                }`}
-                onClick={() => {
-                  const nodeId = result.nodeId;
-                  selectNode(nodeId);
-                  handleClose();
-                  requestAnimationFrame(() => {
-                    if (focusNode) focusNode(nodeId);
-                  });
-                }}
-              >
-                {result.content || <span className="text-gray-400 italic">Empty node</span>}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="px-4 py-8 text-center text-gray-500">No nodes found</div>
-        )}
+        <PaletteList
+          items={items}
+          selectedIndex={selectedIndex}
+          onSelect={handleSelect}
+          emptyMessage="No nodes found"
+        />
       </div>
     </div>
   );
