@@ -42,8 +42,8 @@ const shortcutGroups: ShortcutGroup[] = [
     title: 'Other',
     shortcuts: [
       { key: '/', description: 'Search nodes' },
-      { key: ':', description: 'Command palette' },
-      { key: 'Cmd/Ctrl+K', description: 'Command palette' },
+      { key: ': or ::', description: 'Command palette' },
+      { key: 'Cmd/Ctrl+Shift+P', description: 'Command palette' },
       { key: 'Esc', description: 'Exit insert mode' },
     ],
   },

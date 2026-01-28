@@ -63,7 +63,7 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
       return false;
     }
 
-    if ((event.metaKey || event.ctrlKey) && key === 'k') {
+    if ((event.metaKey || event.ctrlKey) && event.shiftKey && key === 'p') {
       context.openCommandPalette();
       resetBuffer();
       return true;

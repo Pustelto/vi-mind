@@ -117,7 +117,7 @@ export function createCommands(): CommandDefinition[] {
       id: 'edit.deleteChildren',
       name: 'Delete All Children',
       description: 'Delete all children of the selected node',
-      keybindings: ['dG'],
+      keybindings: ['dG', 'dg'],
       modes: ['normal'],
       execute: (ctx) => {
         if (ctx.selectedNodeId) {
@@ -169,7 +169,7 @@ export function createCommands(): CommandDefinition[] {
       id: 'command.openPalette',
       name: 'Open Command Palette',
       description: 'Open command palette to run commands',
-      keybindings: [':'],
+      keybindings: [':', '::'],
       modes: ['normal'],
       execute: (ctx) => ctx.openCommandPalette(),
     },

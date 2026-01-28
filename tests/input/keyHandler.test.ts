@@ -21,21 +21,35 @@ describe('KeyHandler', () => {
 
     mockContext = {
       selectedNodeId: 'node-1',
+      selectedNodeContent: 'Test Node',
       mode: 'normal',
+      hasNodes: true,
+      isSelectedNodeRoot: false,
       selectNode: vi.fn(),
+      createRootNode: vi.fn(),
       createChildNode: vi.fn(),
-      createSiblingNode: vi.fn(),
+      createSiblingAbove: vi.fn(),
+      createSiblingBelow: vi.fn(),
+      insertBetweenParentAndChild: vi.fn(),
       updateNodeContent: vi.fn(),
       deleteNode: vi.fn(),
       deleteNodeWithChildren: vi.fn(),
+      deleteChildren: vi.fn(),
       enterInsertMode: vi.fn(),
       exitInsertMode: vi.fn(),
       navigateToParent: vi.fn(),
       navigateToFirstChild: vi.fn(),
       navigateToNextSibling: vi.fn(),
       navigateToPreviousSibling: vi.fn(),
+      navigateToRoot: vi.fn(),
       openSearch: vi.fn(),
       openCommandPalette: vi.fn(),
+      fitToView: vi.fn(),
+      focusCurrentNode: vi.fn(),
+      copyNodeContent: vi.fn(),
+      panCanvas: vi.fn(),
+      zoomCanvas: vi.fn(),
+      exportAs: vi.fn(),
     };
   });
 
@@ -110,6 +124,56 @@ describe('KeyHandler', () => {
 
       expect(handled2).toBe(true);
       expect(execute).toHaveBeenCalledWith(mockContext);
+    });
+
+    it('should execute dG command for delete children', () => {
+      const execute = vi.fn();
+      const commands: CommandDefinition[] = [
+        {
+          id: 'deleteChildren',
+          name: 'Delete Children',
+          description: 'Delete all children',
+          keybindings: ['dG'],
+          modes: ['normal'],
+          execute,
+        },
+      ];
+      keyHandler = createKeyHandler(commands);
+
+      keyHandler.handleKeyDown(createMockEvent('d'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('G'), mockContext);
+
+      expect(execute).toHaveBeenCalledWith(mockContext);
+    });
+
+    it('should differentiate between dd and dG', () => {
+      const executeDD = vi.fn();
+      const executeDG = vi.fn();
+      const commands: CommandDefinition[] = [
+        {
+          id: 'delete',
+          name: 'Delete',
+          description: 'Delete node',
+          keybindings: ['dd'],
+          modes: ['normal'],
+          execute: executeDD,
+        },
+        {
+          id: 'deleteChildren',
+          name: 'Delete Children',
+          description: 'Delete all children',
+          keybindings: ['dG'],
+          modes: ['normal'],
+          execute: executeDG,
+        },
+      ];
+      keyHandler = createKeyHandler(commands);
+
+      keyHandler.handleKeyDown(createMockEvent('d'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('G'), mockContext);
+
+      expect(executeDG).toHaveBeenCalled();
+      expect(executeDD).not.toHaveBeenCalled();
     });
 
     it('should execute three-key command (cin)', () => {
@@ -206,10 +270,10 @@ describe('KeyHandler', () => {
     });
   });
 
-  describe('Cmd+K handling', () => {
-    it('should open command palette with Cmd+K', () => {
+  describe('Cmd+Shift+P handling', () => {
+    it('should open command palette with Cmd+Shift+P', () => {
       keyHandler = createKeyHandler([]);
-      const event = createMockEvent('k', { metaKey: true });
+      const event = createMockEvent('p', { metaKey: true, shiftKey: true });
 
       const handled = keyHandler.handleKeyDown(event, mockContext);
 
@@ -217,14 +281,26 @@ describe('KeyHandler', () => {
       expect(mockContext.openCommandPalette).toHaveBeenCalled();
     });
 
-    it('should open command palette with Ctrl+K', () => {
+    it('should open command palette with Ctrl+Shift+P', () => {
+      keyHandler = createKeyHandler([]);
+      const event = createMockEvent('p', { ctrlKey: true, shiftKey: true });
+
+      const handled = keyHandler.handleKeyDown(event, mockContext);
+
+      expect(handled).toBe(true);
+      expect(mockContext.openCommandPalette).toHaveBeenCalled();
+    });
+  });
+
+  describe('Ctrl+K handling', () => {
+    it('should pan canvas up with Ctrl+K in normal mode', () => {
       keyHandler = createKeyHandler([]);
       const event = createMockEvent('k', { ctrlKey: true });
 
       const handled = keyHandler.handleKeyDown(event, mockContext);
 
       expect(handled).toBe(true);
-      expect(mockContext.openCommandPalette).toHaveBeenCalled();
+      expect(mockContext.panCanvas).toHaveBeenCalledWith('up');
     });
   });
 
