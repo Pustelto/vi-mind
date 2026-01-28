@@ -57,6 +57,12 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
       return true;
     }
 
+    if ((event.metaKey || event.ctrlKey) && key === 'c' && context.mode === 'normal') {
+      context.copyNodeContent();
+      resetBuffer();
+      return true;
+    }
+
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
     }

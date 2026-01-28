@@ -51,6 +51,10 @@ export function CommandPalette() {
         nodeStore.createSiblingBelow(siblingId);
         uiStore.enterInsertMode();
       },
+      insertBetweenParentAndChild: (childId) => {
+        nodeStore.insertBetweenParentAndChild(childId);
+        uiStore.enterInsertMode();
+      },
       updateNodeContent: nodeStore.updateNodeContent,
       deleteNode: async (id) => {
         const result = await nodeStore.deleteNode(id);
@@ -90,6 +94,13 @@ export function CommandPalette() {
       fitToView: () => {
         const { fitToView } = useNodeStore.getState();
         if (fitToView) fitToView();
+      },
+      focusCurrentNode: () => {
+        const { focusNode, selectedNodeId } = useNodeStore.getState();
+        if (focusNode && selectedNodeId) focusNode(selectedNodeId);
+      },
+      copyNodeContent: () => {
+        nodeStore.copySelectedNodeContent();
       },
     }),
     [nodeStore, uiStore, isSelectedNodeRoot]
