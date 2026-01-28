@@ -18,6 +18,7 @@ export interface MindMapService {
   createNode(content: string, parentId: NodeId | null): Promise<MindMapNode>;
   createSiblingAbove(siblingId: NodeId, content: string): Promise<MindMapNode | null>;
   createSiblingBelow(siblingId: NodeId, content: string): Promise<MindMapNode | null>;
+  insertBetweenParentAndChild(childId: NodeId, content: string): Promise<MindMapNode | null>;
   updateContent(nodeId: NodeId, content: string): Promise<MindMapNode>;
   deleteNode(nodeId: NodeId): Promise<Result<void, string>>;
   deleteNodeWithChildren(nodeId: NodeId): Promise<void>;
@@ -109,6 +110,29 @@ export function createMindMapService(repository: Repository): MindMapService {
     return node;
   };
 
+  const insertBetweenParentAndChild = async (
+    childId: NodeId,
+    content: string
+  ): Promise<MindMapNode | null> => {
+    const child = await repository.findById(childId);
+    if (!child || child.parentId === null) return null;
+
+    const newNode: MindMapNode = {
+      id: generateId(),
+      content,
+      parentId: child.parentId,
+      order: child.order,
+    };
+
+    child.parentId = newNode.id;
+    child.order = 0;
+
+    await repository.save(newNode);
+    await repository.save(child);
+
+    return newNode;
+  };
+
   const updateContent = async (nodeId: NodeId, content: string): Promise<MindMapNode> => {
     const node = await repository.findById(nodeId);
     if (!node) throw new Error(`Node not found: ${nodeId}`);
@@ -189,6 +213,7 @@ export function createMindMapService(repository: Repository): MindMapService {
     createNode,
     createSiblingAbove,
     createSiblingBelow,
+    insertBetweenParentAndChild,
     updateContent,
     deleteNode,
     deleteNodeWithChildren,

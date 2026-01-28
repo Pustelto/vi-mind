@@ -55,6 +55,7 @@ export interface CommandContext {
   createChildNode: (parentId: NodeId) => void;
   createSiblingAbove: (siblingId: NodeId) => void;
   createSiblingBelow: (siblingId: NodeId) => void;
+  insertBetweenParentAndChild: (childId: NodeId) => void;
   updateNodeContent: (id: NodeId, content: string) => void;
   deleteNode: (id: NodeId) => void;
   deleteNodeWithChildren: (id: NodeId) => void;
@@ -67,4 +68,6 @@ export interface CommandContext {
   openSearch: () => void;
   openCommandPalette: () => void;
   fitToView: () => void;
+  focusCurrentNode: () => void;
+  copyNodeContent: () => void;
 }

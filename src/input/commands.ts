@@ -155,9 +155,40 @@ export function createCommands(): CommandDefinition[] {
       id: 'view.fitToView',
       name: 'Fit to View',
       description: 'Fit entire mind map to screen',
-      keybindings: ['zz'],
+      keybindings: ['gg'],
       modes: ['normal'],
       execute: (ctx) => ctx.fitToView(),
+    },
+    {
+      id: 'view.focusNode',
+      name: 'Focus Current Node',
+      description: 'Center and zoom on the selected node',
+      keybindings: ['zz'],
+      modes: ['normal'],
+      execute: (ctx) => ctx.focusCurrentNode(),
+      canExecute: (ctx) => ctx.selectedNodeId !== null,
+    },
+    {
+      id: 'edit.copyNode',
+      name: 'Copy Node Content',
+      description: 'Copy the selected node content to clipboard',
+      keybindings: ['yy'],
+      modes: ['normal'],
+      execute: (ctx) => ctx.copyNodeContent(),
+      canExecute: (ctx) => ctx.selectedNodeId !== null,
+    },
+    {
+      id: 'edit.insertBetween',
+      name: 'Insert Parent Node',
+      description: 'Insert a new node between this node and its parent',
+      keybindings: ['I'],
+      modes: ['normal'],
+      execute: (ctx) => {
+        if (ctx.selectedNodeId) {
+          ctx.insertBetweenParentAndChild(ctx.selectedNodeId);
+        }
+      },
+      canExecute: (ctx) => ctx.selectedNodeId !== null && !ctx.isSelectedNodeRoot,
     },
   ];
 }

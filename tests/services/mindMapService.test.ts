@@ -323,4 +323,43 @@ describe('MindMapService', () => {
       expect(prevId).toBeNull();
     });
   });
+
+  describe('insertBetweenParentAndChild', () => {
+    it('should insert a node between parent and child', async () => {
+      const root = await service.createNode('Root', null);
+      const child = await service.createNode('Child', root.id);
+
+      const inserted = await service.insertBetweenParentAndChild(child.id, 'Middle');
+
+      expect(inserted).not.toBeNull();
+      expect(inserted!.content).toBe('Middle');
+      expect(inserted!.parentId).toBe(root.id);
+
+      const updatedChild = await service.getNode(child.id);
+      expect(updatedChild!.parentId).toBe(inserted!.id);
+    });
+
+    it('should return null when trying to insert on root node', async () => {
+      const root = await service.createNode('Root', null);
+
+      const result = await service.insertBetweenParentAndChild(root.id, 'Middle');
+
+      expect(result).toBeNull();
+    });
+
+    it('should preserve the position among siblings', async () => {
+      const root = await service.createNode('Root', null);
+      await service.createNode('Child 1', root.id);
+      const child2 = await service.createNode('Child 2', root.id);
+      await service.createNode('Child 3', root.id);
+
+      const originalOrder = child2.order;
+      const inserted = await service.insertBetweenParentAndChild(child2.id, 'Middle');
+
+      expect(inserted!.order).toBe(originalOrder);
+
+      const updatedChild2 = await service.getNode(child2.id);
+      expect(updatedChild2!.order).toBe(0);
+    });
+  });
 });

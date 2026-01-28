@@ -134,4 +134,34 @@ describe('Command Definitions', () => {
       expect(cmd?.keybindings).toContain('/');
     });
   });
+
+  describe('view commands', () => {
+    it('should have view.fitToView command (gg)', () => {
+      const cmd = commands.find((c) => c.id === 'view.fitToView');
+      expect(cmd).toBeDefined();
+      expect(cmd?.keybindings).toContain('gg');
+    });
+
+    it('should have view.focusNode command (zz)', () => {
+      const cmd = commands.find((c) => c.id === 'view.focusNode');
+      expect(cmd).toBeDefined();
+      expect(cmd?.keybindings).toContain('zz');
+    });
+  });
+
+  describe('clipboard commands', () => {
+    it('should have edit.copyNode command (yy)', () => {
+      const cmd = commands.find((c) => c.id === 'edit.copyNode');
+      expect(cmd).toBeDefined();
+      expect(cmd?.keybindings).toContain('yy');
+    });
+  });
+
+  describe('structure commands', () => {
+    it('should have edit.insertBetween command (I)', () => {
+      const cmd = commands.find((c) => c.id === 'edit.insertBetween');
+      expect(cmd).toBeDefined();
+      expect(cmd?.keybindings).toContain('I');
+    });
+  });
 });

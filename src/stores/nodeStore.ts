@@ -7,6 +7,7 @@ interface NodeState {
   selectedNodeId: NodeId | null;
   service: MindMapService | null;
   fitToView: (() => void) | null;
+  focusNode: ((nodeId: NodeId) => void) | null;
 
   initialize: (service: MindMapService) => Promise<void>;
   selectNode: (id: NodeId) => void;
@@ -15,11 +16,14 @@ interface NodeState {
   createChildNode: (parentId: NodeId) => Promise<MindMapNode>;
   createSiblingAbove: (siblingId: NodeId) => Promise<MindMapNode | null>;
   createSiblingBelow: (siblingId: NodeId) => Promise<MindMapNode | null>;
+  insertBetweenParentAndChild: (childId: NodeId) => Promise<MindMapNode | null>;
   isRootNode: (nodeId: NodeId) => Promise<boolean>;
   updateNodeContent: (id: NodeId, content: string) => Promise<void>;
   deleteNode: (id: NodeId) => Promise<{ ok: boolean; error?: string }>;
   deleteNodeWithChildren: (id: NodeId) => Promise<void>;
   setFitToView: (fn: () => void) => void;
+  setFocusNode: (fn: (nodeId: NodeId) => void) => void;
+  copySelectedNodeContent: () => Promise<void>;
 }
 
 export const useNodeStore = create<NodeState>((set, get) => ({
@@ -27,6 +31,7 @@ export const useNodeStore = create<NodeState>((set, get) => ({
   selectedNodeId: null,
   service: null,
   fitToView: null,
+  focusNode: null,
 
   initialize: async (service) => {
     const nodes = await service.getAllNodes();
@@ -82,6 +87,16 @@ export const useNodeStore = create<NodeState>((set, get) => ({
     return node;
   },
 
+  insertBetweenParentAndChild: async (childId) => {
+    const { service, refreshNodes } = get();
+    if (!service) return null;
+    const node = await service.insertBetweenParentAndChild(childId, 'New Node');
+    if (!node) return null;
+    await refreshNodes();
+    set({ selectedNodeId: node.id });
+    return node;
+  },
+
   isRootNode: async (nodeId) => {
     const { service } = get();
     if (!service) return false;
@@ -118,4 +133,13 @@ export const useNodeStore = create<NodeState>((set, get) => ({
   },
 
   setFitToView: (fn) => set({ fitToView: fn }),
+  setFocusNode: (fn) => set({ focusNode: fn }),
+
+  copySelectedNodeContent: async () => {
+    const { selectedNodeId, nodes } = get();
+    if (!selectedNodeId) return;
+    const node = nodes.find((n) => n.id === selectedNodeId);
+    if (!node) return;
+    await navigator.clipboard.writeText(node.content);
+  },
 }));
