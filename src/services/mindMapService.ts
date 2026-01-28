@@ -8,6 +8,7 @@ export interface MindMapService {
   getParent(nodeId: NodeId): Promise<MindMapNode | null>;
   getSiblings(nodeId: NodeId): Promise<MindMapNode[]>;
   hasChildren(nodeId: NodeId): Promise<boolean>;
+  isRootNode(nodeId: NodeId): Promise<boolean>;
 
   getParentId(nodeId: NodeId): Promise<NodeId | null>;
   getFirstChildId(nodeId: NodeId): Promise<NodeId | null>;
@@ -15,6 +16,8 @@ export interface MindMapService {
   getPreviousSiblingId(nodeId: NodeId): Promise<NodeId | null>;
 
   createNode(content: string, parentId: NodeId | null): Promise<MindMapNode>;
+  createSiblingAbove(siblingId: NodeId, content: string): Promise<MindMapNode | null>;
+  createSiblingBelow(siblingId: NodeId, content: string): Promise<MindMapNode | null>;
   updateContent(nodeId: NodeId, content: string): Promise<MindMapNode>;
   deleteNode(nodeId: NodeId): Promise<Result<void, string>>;
   deleteNodeWithChildren(nodeId: NodeId): Promise<void>;
@@ -49,8 +52,59 @@ export function createMindMapService(repository: Repository): MindMapService {
     return children.length > 0;
   };
 
+  const isRootNode = async (nodeId: NodeId): Promise<boolean> => {
+    const node = await repository.findById(nodeId);
+    return node?.parentId === null;
+  };
+
   const createNode = async (content: string, parentId: NodeId | null): Promise<MindMapNode> => {
-    const node: MindMapNode = { id: generateId(), content, parentId };
+    const siblings = await repository.findByParentId(parentId);
+    const maxOrder = siblings.length > 0 ? Math.max(...siblings.map((s) => s.order)) : -1;
+    const node: MindMapNode = { id: generateId(), content, parentId, order: maxOrder + 1 };
+    await repository.save(node);
+    return node;
+  };
+
+  const createSiblingAbove = async (siblingId: NodeId, content: string): Promise<MindMapNode | null> => {
+    const sibling = await repository.findById(siblingId);
+    if (!sibling || sibling.parentId === null) return null;
+
+    const siblings = await repository.findByParentId(sibling.parentId);
+    const siblingIndex = siblings.findIndex((s) => s.id === siblingId);
+
+    for (let i = siblingIndex; i < siblings.length; i++) {
+      siblings[i].order += 1;
+      await repository.save(siblings[i]);
+    }
+
+    const node: MindMapNode = {
+      id: generateId(),
+      content,
+      parentId: sibling.parentId,
+      order: sibling.order - 1,
+    };
+    await repository.save(node);
+    return node;
+  };
+
+  const createSiblingBelow = async (siblingId: NodeId, content: string): Promise<MindMapNode | null> => {
+    const sibling = await repository.findById(siblingId);
+    if (!sibling || sibling.parentId === null) return null;
+
+    const siblings = await repository.findByParentId(sibling.parentId);
+    const siblingIndex = siblings.findIndex((s) => s.id === siblingId);
+
+    for (let i = siblingIndex + 1; i < siblings.length; i++) {
+      siblings[i].order += 1;
+      await repository.save(siblings[i]);
+    }
+
+    const node: MindMapNode = {
+      id: generateId(),
+      content,
+      parentId: sibling.parentId,
+      order: sibling.order + 1,
+    };
     await repository.save(node);
     return node;
   };
@@ -127,11 +181,14 @@ export function createMindMapService(repository: Repository): MindMapService {
     getParent,
     getSiblings,
     hasChildren,
+    isRootNode,
     getParentId,
     getFirstChildId,
     getNextSiblingId,
     getPreviousSiblingId,
     createNode,
+    createSiblingAbove,
+    createSiblingBelow,
     updateContent,
     deleteNode,
     deleteNodeWithChildren,

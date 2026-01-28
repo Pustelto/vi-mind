@@ -6,26 +6,32 @@ interface NodeState {
   nodes: MindMapNode[];
   selectedNodeId: NodeId | null;
   service: MindMapService | null;
+  fitToView: (() => void) | null;
 
   initialize: (service: MindMapService) => Promise<void>;
   selectNode: (id: NodeId) => void;
   refreshNodes: () => Promise<void>;
+  createRootNode: () => Promise<MindMapNode | null>;
   createChildNode: (parentId: NodeId) => Promise<MindMapNode>;
-  createSiblingNode: (siblingId: NodeId) => Promise<MindMapNode | null>;
+  createSiblingAbove: (siblingId: NodeId) => Promise<MindMapNode | null>;
+  createSiblingBelow: (siblingId: NodeId) => Promise<MindMapNode | null>;
+  isRootNode: (nodeId: NodeId) => Promise<boolean>;
   updateNodeContent: (id: NodeId, content: string) => Promise<void>;
   deleteNode: (id: NodeId) => Promise<{ ok: boolean; error?: string }>;
   deleteNodeWithChildren: (id: NodeId) => Promise<void>;
+  setFitToView: (fn: () => void) => void;
 }
 
 export const useNodeStore = create<NodeState>((set, get) => ({
   nodes: [],
   selectedNodeId: null,
   service: null,
+  fitToView: null,
 
   initialize: async (service) => {
-    const root = await service.ensureRootExists();
     const nodes = await service.getAllNodes();
-    set({ service, nodes, selectedNodeId: root.id });
+    const root = nodes.find((n) => n.parentId === null);
+    set({ service, nodes, selectedNodeId: root?.id ?? null });
   },
 
   selectNode: (id) => set({ selectedNodeId: id }),
@@ -37,6 +43,16 @@ export const useNodeStore = create<NodeState>((set, get) => ({
     set({ nodes });
   },
 
+  createRootNode: async () => {
+    const { service, refreshNodes, nodes } = get();
+    if (!service) return null;
+    if (nodes.some((n) => n.parentId === null)) return null;
+    const node = await service.createNode('Root', null);
+    await refreshNodes();
+    set({ selectedNodeId: node.id });
+    return node;
+  },
+
   createChildNode: async (parentId) => {
     const { service, refreshNodes } = get();
     if (!service) throw new Error('Service not initialized');
@@ -46,15 +62,30 @@ export const useNodeStore = create<NodeState>((set, get) => ({
     return node;
   },
 
-  createSiblingNode: async (siblingId) => {
+  createSiblingAbove: async (siblingId) => {
     const { service, refreshNodes } = get();
     if (!service) return null;
-    const sibling = await service.getNode(siblingId);
-    if (!sibling) return null;
-    const node = await service.createNode('New Node', sibling.parentId);
+    const node = await service.createSiblingAbove(siblingId, 'New Node');
+    if (!node) return null;
     await refreshNodes();
     set({ selectedNodeId: node.id });
     return node;
+  },
+
+  createSiblingBelow: async (siblingId) => {
+    const { service, refreshNodes } = get();
+    if (!service) return null;
+    const node = await service.createSiblingBelow(siblingId, 'New Node');
+    if (!node) return null;
+    await refreshNodes();
+    set({ selectedNodeId: node.id });
+    return node;
+  },
+
+  isRootNode: async (nodeId) => {
+    const { service } = get();
+    if (!service) return false;
+    return service.isRootNode(nodeId);
   },
 
   updateNodeContent: async (id, content) => {
@@ -85,4 +116,6 @@ export const useNodeStore = create<NodeState>((set, get) => ({
     await refreshNodes();
     set({ selectedNodeId: siblings[0]?.id ?? parent?.id ?? null });
   },
+
+  setFitToView: (fn) => set({ fitToView: fn }),
 }));

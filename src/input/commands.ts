@@ -45,24 +45,38 @@ export function createCommands(): CommandDefinition[] {
       keybindings: ['a'],
       modes: ['normal'],
       execute: (ctx) => {
-        if (ctx.selectedNodeId) {
+        if (!ctx.hasNodes) {
+          ctx.createRootNode();
+        } else if (ctx.selectedNodeId) {
           ctx.createChildNode(ctx.selectedNodeId);
         }
       },
-      canExecute: (ctx) => ctx.selectedNodeId !== null,
     },
     {
-      id: 'edit.createSibling',
-      name: 'Create Sibling Node',
-      description: 'Create a new sibling node and enter insert mode',
+      id: 'edit.createSiblingBelow',
+      name: 'Create Sibling Below',
+      description: 'Create a new sibling node below and enter insert mode',
       keybindings: ['o'],
       modes: ['normal'],
       execute: (ctx) => {
         if (ctx.selectedNodeId) {
-          ctx.createSiblingNode(ctx.selectedNodeId);
+          ctx.createSiblingBelow(ctx.selectedNodeId);
         }
       },
-      canExecute: (ctx) => ctx.selectedNodeId !== null,
+      canExecute: (ctx) => ctx.selectedNodeId !== null && !ctx.isSelectedNodeRoot,
+    },
+    {
+      id: 'edit.createSiblingAbove',
+      name: 'Create Sibling Above',
+      description: 'Create a new sibling node above and enter insert mode',
+      keybindings: ['O'],
+      modes: ['normal'],
+      execute: (ctx) => {
+        if (ctx.selectedNodeId) {
+          ctx.createSiblingAbove(ctx.selectedNodeId);
+        }
+      },
+      canExecute: (ctx) => ctx.selectedNodeId !== null && !ctx.isSelectedNodeRoot,
     },
     {
       id: 'edit.delete',
@@ -128,6 +142,14 @@ export function createCommands(): CommandDefinition[] {
       keybindings: ['/'],
       modes: ['normal'],
       execute: (ctx) => ctx.openSearch(),
+    },
+    {
+      id: 'view.fitToView',
+      name: 'Fit to View',
+      description: 'Fit entire mind map to screen',
+      keybindings: ['zz'],
+      modes: ['normal'],
+      execute: (ctx) => ctx.fitToView(),
     },
   ];
 }

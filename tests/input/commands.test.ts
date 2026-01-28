@@ -81,10 +81,16 @@ describe('Command Definitions', () => {
       expect(cmd?.keybindings).toContain('a');
     });
 
-    it('should have edit.createSibling command', () => {
-      const cmd = commands.find((c) => c.id === 'edit.createSibling');
+    it('should have edit.createSiblingBelow command', () => {
+      const cmd = commands.find((c) => c.id === 'edit.createSiblingBelow');
       expect(cmd).toBeDefined();
       expect(cmd?.keybindings).toContain('o');
+    });
+
+    it('should have edit.createSiblingAbove command', () => {
+      const cmd = commands.find((c) => c.id === 'edit.createSiblingAbove');
+      expect(cmd).toBeDefined();
+      expect(cmd?.keybindings).toContain('O');
     });
 
     it('should have edit.delete command (dd)', () => {

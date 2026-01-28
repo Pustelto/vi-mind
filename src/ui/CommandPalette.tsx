@@ -10,21 +10,44 @@ export function CommandPalette() {
 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isSelectedNodeRoot, setIsSelectedNodeRoot] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const allCommands = useMemo(() => createCommands(), []);
+
+  useEffect(() => {
+    const checkIsRoot = async () => {
+      if (nodeStore.selectedNodeId) {
+        const isRoot = await nodeStore.isRootNode(nodeStore.selectedNodeId);
+        setIsSelectedNodeRoot(isRoot);
+      } else {
+        setIsSelectedNodeRoot(false);
+      }
+    };
+    checkIsRoot();
+  }, [nodeStore.selectedNodeId, nodeStore]);
 
   const ctx: CommandContext = useMemo(
     () => ({
       selectedNodeId: nodeStore.selectedNodeId,
       mode: uiStore.mode,
+      hasNodes: nodeStore.nodes.length > 0,
+      isSelectedNodeRoot,
       selectNode: nodeStore.selectNode,
+      createRootNode: async () => {
+        await nodeStore.createRootNode();
+        uiStore.enterInsertMode();
+      },
       createChildNode: (parentId) => {
         nodeStore.createChildNode(parentId);
         uiStore.enterInsertMode();
       },
-      createSiblingNode: (siblingId) => {
-        nodeStore.createSiblingNode(siblingId);
+      createSiblingAbove: (siblingId) => {
+        nodeStore.createSiblingAbove(siblingId);
+        uiStore.enterInsertMode();
+      },
+      createSiblingBelow: (siblingId) => {
+        nodeStore.createSiblingBelow(siblingId);
         uiStore.enterInsertMode();
       },
       updateNodeContent: nodeStore.updateNodeContent,
@@ -63,8 +86,12 @@ export function CommandPalette() {
       },
       openSearch: uiStore.openSearch,
       openCommandPalette: uiStore.openCommandPalette,
+      fitToView: () => {
+        const { fitToView } = useNodeStore.getState();
+        if (fitToView) fitToView();
+      },
     }),
-    [nodeStore, uiStore]
+    [nodeStore, uiStore, isSelectedNodeRoot]
   );
 
   const availableCommands = useMemo(() => {

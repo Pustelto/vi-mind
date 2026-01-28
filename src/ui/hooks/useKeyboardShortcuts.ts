@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNodeStore, useUIStore } from '../../stores';
 import { createKeyHandler } from '../../input/keyHandler';
 import { createCommands } from '../../input/commands';
@@ -7,6 +7,7 @@ import type { CommandContext } from '../../types';
 export function useKeyboardShortcuts() {
   const nodeStore = useNodeStore();
   const uiStore = useUIStore();
+  const [isSelectedNodeRoot, setIsSelectedNodeRoot] = useState(false);
 
   const keyHandler = useMemo(() => {
     const commands = createCommands();
@@ -14,17 +15,39 @@ export function useKeyboardShortcuts() {
   }, []);
 
   useEffect(() => {
+    const checkIsRoot = async () => {
+      if (nodeStore.selectedNodeId) {
+        const isRoot = await nodeStore.isRootNode(nodeStore.selectedNodeId);
+        setIsSelectedNodeRoot(isRoot);
+      } else {
+        setIsSelectedNodeRoot(false);
+      }
+    };
+    checkIsRoot();
+  }, [nodeStore.selectedNodeId, nodeStore]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const ctx: CommandContext = {
         selectedNodeId: nodeStore.selectedNodeId,
         mode: uiStore.mode,
+        hasNodes: nodeStore.nodes.length > 0,
+        isSelectedNodeRoot,
         selectNode: nodeStore.selectNode,
+        createRootNode: async () => {
+          await nodeStore.createRootNode();
+          uiStore.enterInsertMode();
+        },
         createChildNode: (parentId) => {
           nodeStore.createChildNode(parentId);
           uiStore.enterInsertMode();
         },
-        createSiblingNode: (siblingId) => {
-          nodeStore.createSiblingNode(siblingId);
+        createSiblingAbove: (siblingId) => {
+          nodeStore.createSiblingAbove(siblingId);
+          uiStore.enterInsertMode();
+        },
+        createSiblingBelow: (siblingId) => {
+          nodeStore.createSiblingBelow(siblingId);
           uiStore.enterInsertMode();
         },
         updateNodeContent: nodeStore.updateNodeContent,
@@ -63,6 +86,10 @@ export function useKeyboardShortcuts() {
         },
         openSearch: uiStore.openSearch,
         openCommandPalette: uiStore.openCommandPalette,
+        fitToView: () => {
+          const { fitToView } = useNodeStore.getState();
+          if (fitToView) fitToView();
+        },
       };
 
       const handled = keyHandler.handleKeyDown(event, ctx);
@@ -74,7 +101,7 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [keyHandler, nodeStore, uiStore]);
+  }, [keyHandler, nodeStore, uiStore, isSelectedNodeRoot]);
 
   return keyHandler;
 }

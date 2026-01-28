@@ -18,7 +18,9 @@ export function createInMemoryRepository(): Repository {
     },
     findById: async (id) => nodes.get(id) ?? null,
     findByParentId: async (parentId) =>
-      Array.from(nodes.values()).filter((n) => n.parentId === parentId),
+      Array.from(nodes.values())
+        .filter((n) => n.parentId === parentId)
+        .sort((a, b) => a.order - b.order),
     findAll: async () => Array.from(nodes.values()),
     delete: async (id) => {
       nodes.delete(id);

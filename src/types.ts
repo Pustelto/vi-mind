@@ -4,6 +4,7 @@ export interface MindMapNode {
   id: NodeId;
   content: string;
   parentId: NodeId | null;
+  order: number;
 }
 
 export interface Position {
@@ -47,9 +48,13 @@ export interface CommandDefinition {
 export interface CommandContext {
   selectedNodeId: NodeId | null;
   mode: Mode;
+  hasNodes: boolean;
+  isSelectedNodeRoot: boolean;
   selectNode: (id: NodeId) => void;
+  createRootNode: () => void;
   createChildNode: (parentId: NodeId) => void;
-  createSiblingNode: (siblingId: NodeId) => void;
+  createSiblingAbove: (siblingId: NodeId) => void;
+  createSiblingBelow: (siblingId: NodeId) => void;
   updateNodeContent: (id: NodeId, content: string) => void;
   deleteNode: (id: NodeId) => void;
   deleteNodeWithChildren: (id: NodeId) => void;
@@ -61,4 +66,5 @@ export interface CommandContext {
   navigateToPreviousSibling: () => void;
   openSearch: () => void;
   openCommandPalette: () => void;
+  fitToView: () => void;
 }
