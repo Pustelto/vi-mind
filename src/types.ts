@@ -28,7 +28,7 @@ export interface EdgeLayout {
 export interface LayoutResult {
   nodes: Map<NodeId, NodeLayout>;
   edges: EdgeLayout[];
-  bounds: { width: number; height: number };
+  bounds: { minX: number; minY: number; width: number; height: number };
 }
 
 export type Mode = 'normal' | 'insert';

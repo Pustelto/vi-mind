@@ -47,6 +47,10 @@ function buildTree(nodes: MindMapNode[], rootId: NodeId | null): TreeNode | null
     childrenMap.get(parentId)!.push(node);
   }
 
+  for (const children of childrenMap.values()) {
+    children.sort((a, b) => a.order - b.order);
+  }
+
   function buildNode(nodeId: NodeId): TreeNode | null {
     const node = nodeMap.get(nodeId);
     if (!node) return null;
@@ -85,14 +89,16 @@ export function calculateLayout(nodes: MindMapNode[]): LayoutResult {
   const edges: EdgeLayout[] = [];
 
   if (nodes.length === 0) {
-    return { nodes: nodeLayouts, edges, bounds: { width: 0, height: 0 } };
+    return { nodes: nodeLayouts, edges, bounds: { minX: 0, minY: 0, width: 0, height: 0 } };
   }
 
   const tree = buildTree(nodes, null);
   if (!tree) {
-    return { nodes: nodeLayouts, edges, bounds: { width: 0, height: 0 } };
+    return { nodes: nodeLayouts, edges, bounds: { minX: 0, minY: 0, width: 0, height: 0 } };
   }
 
+  let minX = Infinity;
+  let minY = Infinity;
   let maxX = 0;
   let maxY = 0;
 
@@ -104,6 +110,8 @@ export function calculateLayout(nodes: MindMapNode[]): LayoutResult {
       height: node.height,
     });
 
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
     maxX = Math.max(maxX, x + node.width);
     maxY = Math.max(maxY, y + node.height);
 
@@ -141,9 +149,15 @@ export function calculateLayout(nodes: MindMapNode[]): LayoutResult {
 
   layoutNode(tree, 50, 50);
 
+  const padding = 50;
   return {
     nodes: nodeLayouts,
     edges,
-    bounds: { width: maxX + 50, height: maxY + 50 },
+    bounds: {
+      minX: minX - padding,
+      minY: minY - padding,
+      width: maxX - minX + padding * 2,
+      height: maxY - minY + padding * 2,
+    },
   };
 }
