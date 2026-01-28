@@ -34,7 +34,7 @@ const shortcutGroups: ShortcutGroup[] = [
     shortcuts: [
       { key: 'Ctrl+h/j/k/l', description: 'Pan canvas' },
       { key: 'Cmd/Ctrl + / -', description: 'Zoom in/out' },
-      { key: 'Ctrl+0', description: 'Fit to view' },
+      { key: 'Ctrl+W =', description: 'Fit to view' },
       { key: 'zz', description: 'Focus current node' },
     ],
   },

@@ -9,6 +9,8 @@ export interface KeyHandler {
 export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
   let keyBuffer = '';
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let ctrlWPressed = false;
+  let ctrlWTimeoutId: ReturnType<typeof setTimeout> | null = null;
   const TIMEOUT_MS = 1000;
 
   const resetBuffer = () => {
@@ -16,6 +18,14 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
       timeoutId = null;
+    }
+  };
+
+  const resetCtrlW = () => {
+    ctrlWPressed = false;
+    if (ctrlWTimeoutId !== null) {
+      clearTimeout(ctrlWTimeoutId);
+      ctrlWTimeoutId = null;
     }
   };
 
@@ -77,9 +87,17 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
       return true;
     }
 
-    if (event.ctrlKey && key === '0') {
+    if (ctrlWPressed && (key === '=' || key === '+')) {
       context.fitToView();
       resetBuffer();
+      resetCtrlW();
+      return true;
+    }
+
+    if (event.ctrlKey && key === 'w') {
+      ctrlWPressed = true;
+      resetBuffer();
+      ctrlWTimeoutId = setTimeout(resetCtrlW, TIMEOUT_MS);
       return true;
     }
 
