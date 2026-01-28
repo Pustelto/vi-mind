@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { useNodeStore } from '../stores';
+import { useNodeStore, useUIStore } from '../stores';
 import { calculateLayout } from '../layout/hierarchicalLayout';
 import { MindMapNodeComponent } from './MindMapNode';
 import { MindMapEdge } from './MindMapEdge';
@@ -15,6 +15,7 @@ export function MindMapCanvas() {
   const nodes = useNodeStore((state) => state.nodes);
   const selectedNodeId = useNodeStore((state) => state.selectedNodeId);
   const setFitToView = useNodeStore((state) => state.setFitToView);
+  const mode = useUIStore((state) => state.mode);
 
   const layout = useMemo(() => calculateLayout(nodes), [nodes]);
 
@@ -22,6 +23,7 @@ export function MindMapCanvas() {
   const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 800, height: 600 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const lastAutoPanRef = useRef<{ mode: string; nodeId: string | null }>({ mode: 'normal', nodeId: null });
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -101,20 +103,19 @@ export function MindMapCanvas() {
     const containerAspect = rect.width / rect.height;
     const boundsAspect = layout.bounds.width / layout.bounds.height;
 
-    const padding = 50;
     let newWidth: number;
     let newHeight: number;
 
     if (boundsAspect > containerAspect) {
-      newWidth = layout.bounds.width + padding * 2;
+      newWidth = layout.bounds.width;
       newHeight = newWidth / containerAspect;
     } else {
-      newHeight = layout.bounds.height + padding * 2;
+      newHeight = layout.bounds.height;
       newWidth = newHeight * containerAspect;
     }
 
-    const contentCenterX = layout.bounds.width / 2;
-    const contentCenterY = layout.bounds.height / 2;
+    const contentCenterX = layout.bounds.minX + layout.bounds.width / 2;
+    const contentCenterY = layout.bounds.minY + layout.bounds.height / 2;
     const newX = contentCenterX - newWidth / 2;
     const newY = contentCenterY - newHeight / 2;
 
@@ -129,6 +130,58 @@ export function MindMapCanvas() {
   useEffect(() => {
     setFitToView(fitToView);
   }, [fitToView, setFitToView]);
+
+  const panToNode = useCallback(
+    (nodeId: string) => {
+      const nodeLayout = layout.nodes.get(nodeId);
+      if (!nodeLayout || !containerRef.current) return;
+
+      setViewBox((prev) => {
+        const padding = 100;
+        const nodeLeft = nodeLayout.position.x;
+        const nodeRight = nodeLayout.position.x + nodeLayout.width;
+        const nodeTop = nodeLayout.position.y;
+        const nodeBottom = nodeLayout.position.y + nodeLayout.height;
+
+        const viewLeft = prev.x + padding;
+        const viewRight = prev.x + prev.width - padding;
+        const viewTop = prev.y + padding;
+        const viewBottom = prev.y + prev.height - padding;
+
+        let newX = prev.x;
+        let newY = prev.y;
+
+        if (nodeLeft < viewLeft) {
+          newX = nodeLeft - padding;
+        } else if (nodeRight > viewRight) {
+          newX = nodeRight - prev.width + padding;
+        }
+
+        if (nodeTop < viewTop) {
+          newY = nodeTop - padding;
+        } else if (nodeBottom > viewBottom) {
+          newY = nodeBottom - prev.height + padding;
+        }
+
+        if (newX !== prev.x || newY !== prev.y) {
+          return { ...prev, x: newX, y: newY };
+        }
+        return prev;
+      });
+    },
+    [layout.nodes]
+  );
+
+  useEffect(() => {
+    const lastPan = lastAutoPanRef.current;
+    if (mode === 'insert' && selectedNodeId && (lastPan.mode !== 'insert' || lastPan.nodeId !== selectedNodeId)) {
+      lastAutoPanRef.current = { mode, nodeId: selectedNodeId };
+      const frameId = requestAnimationFrame(() => panToNode(selectedNodeId));
+      return () => cancelAnimationFrame(frameId);
+    } else if (mode !== 'insert') {
+      lastAutoPanRef.current = { mode, nodeId: null };
+    }
+  }, [mode, selectedNodeId, panToNode]);
 
   if (nodes.length === 0) {
     return (
