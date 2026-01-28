@@ -15,6 +15,7 @@ export function MindMapCanvas() {
   const nodes = useNodeStore((state) => state.nodes);
   const selectedNodeId = useNodeStore((state) => state.selectedNodeId);
   const setFitToView = useNodeStore((state) => state.setFitToView);
+  const setFocusNode = useNodeStore((state) => state.setFocusNode);
   const mode = useUIStore((state) => state.mode);
 
   const layout = useMemo(() => calculateLayout(nodes), [nodes]);
@@ -127,9 +128,53 @@ export function MindMapCanvas() {
     });
   }, [layout.bounds]);
 
+  const focusNode = useCallback(
+    (nodeId: string) => {
+      const nodeLayout = layout.nodes.get(nodeId);
+      if (!nodeLayout) return;
+
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const containerAspect = rect.width / rect.height;
+
+      const padding = 150;
+      const nodeWidth = nodeLayout.width + padding * 2;
+      const nodeHeight = nodeLayout.height + padding * 2;
+      const nodeAspect = nodeWidth / nodeHeight;
+
+      let newWidth: number;
+      let newHeight: number;
+
+      if (nodeAspect > containerAspect) {
+        newWidth = Math.max(nodeWidth, 400);
+        newHeight = newWidth / containerAspect;
+      } else {
+        newHeight = Math.max(nodeHeight, 300);
+        newWidth = newHeight * containerAspect;
+      }
+
+      const nodeCenterX = nodeLayout.position.x + nodeLayout.width / 2;
+      const nodeCenterY = nodeLayout.position.y + nodeLayout.height / 2;
+
+      setViewBox({
+        x: nodeCenterX - newWidth / 2,
+        y: nodeCenterY - newHeight / 2,
+        width: newWidth,
+        height: newHeight,
+      });
+    },
+    [layout.nodes]
+  );
+
   useEffect(() => {
     setFitToView(fitToView);
   }, [fitToView, setFitToView]);
+
+  useEffect(() => {
+    setFocusNode(focusNode);
+  }, [focusNode, setFocusNode]);
 
   const panToNode = useCallback(
     (nodeId: string) => {

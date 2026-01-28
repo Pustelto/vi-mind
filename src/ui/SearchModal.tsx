@@ -5,6 +5,7 @@ import { createSearchService } from '../services/searchService';
 export function SearchModal() {
   const nodes = useNodeStore((state) => state.nodes);
   const selectNode = useNodeStore((state) => state.selectNode);
+  const focusNode = useNodeStore((state) => state.focusNode);
   const isSearchOpen = useUIStore((state) => state.isSearchOpen);
   const closeSearch = useUIStore((state) => state.closeSearch);
 
@@ -42,8 +43,12 @@ export function SearchModal() {
       case 'Enter':
         e.preventDefault();
         if (results[clampedIndex]) {
-          selectNode(results[clampedIndex].nodeId);
+          const nodeId = results[clampedIndex].nodeId;
+          selectNode(nodeId);
           handleClose();
+          requestAnimationFrame(() => {
+            if (focusNode) focusNode(nodeId);
+          });
         }
         break;
       case 'Escape':
@@ -85,8 +90,12 @@ export function SearchModal() {
                   i === clampedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
                 }`}
                 onClick={() => {
-                  selectNode(result.nodeId);
+                  const nodeId = result.nodeId;
+                  selectNode(nodeId);
                   handleClose();
+                  requestAnimationFrame(() => {
+                    if (focusNode) focusNode(nodeId);
+                  });
                 }}
               >
                 {result.content || <span className="text-gray-400 italic">Empty node</span>}
