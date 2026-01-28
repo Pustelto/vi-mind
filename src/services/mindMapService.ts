@@ -4,6 +4,7 @@ import type { Repository } from '../storage/repository';
 export interface MindMapService {
   getAllNodes(): Promise<MindMapNode[]>;
   getNode(id: NodeId): Promise<MindMapNode | null>;
+  getRootNode(): Promise<MindMapNode | null>;
   getChildren(parentId: NodeId): Promise<MindMapNode[]>;
   getParent(nodeId: NodeId): Promise<MindMapNode | null>;
   getSiblings(nodeId: NodeId): Promise<MindMapNode[]>;
@@ -22,6 +23,7 @@ export interface MindMapService {
   updateContent(nodeId: NodeId, content: string): Promise<MindMapNode>;
   deleteNode(nodeId: NodeId): Promise<Result<void, string>>;
   deleteNodeWithChildren(nodeId: NodeId): Promise<void>;
+  deleteChildren(nodeId: NodeId): Promise<void>;
 
   ensureRootExists(): Promise<MindMapNode>;
 }
@@ -32,6 +34,11 @@ export function createMindMapService(repository: Repository): MindMapService {
   const getAllNodes = () => repository.findAll();
 
   const getNode = (id: NodeId) => repository.findById(id);
+
+  const getRootNode = async (): Promise<MindMapNode | null> => {
+    const all = await getAllNodes();
+    return all.find((n) => n.parentId === null) ?? null;
+  };
 
   const getChildren = (parentId: NodeId) => repository.findByParentId(parentId);
 
@@ -158,6 +165,13 @@ export function createMindMapService(repository: Repository): MindMapService {
     await repository.delete(nodeId);
   };
 
+  const deleteChildren = async (nodeId: NodeId): Promise<void> => {
+    const children = await getChildren(nodeId);
+    for (const child of children) {
+      await deleteNodeWithChildren(child.id);
+    }
+  };
+
   const ensureRootExists = async (): Promise<MindMapNode> => {
     const all = await getAllNodes();
     const root = all.find((n) => n.parentId === null);
@@ -201,6 +215,7 @@ export function createMindMapService(repository: Repository): MindMapService {
   return {
     getAllNodes,
     getNode,
+    getRootNode,
     getChildren,
     getParent,
     getSiblings,
@@ -217,6 +232,7 @@ export function createMindMapService(repository: Repository): MindMapService {
     updateContent,
     deleteNode,
     deleteNodeWithChildren,
+    deleteChildren,
     ensureRootExists,
   };
 }

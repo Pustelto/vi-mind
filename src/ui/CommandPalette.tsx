@@ -29,9 +29,12 @@ export function CommandPalette() {
     checkIsRoot();
   }, [nodeStore.selectedNodeId, nodeStore]);
 
+  const selectedNode = nodeStore.nodes.find((n) => n.id === nodeStore.selectedNodeId);
+
   const ctx: CommandContext = useMemo(
     () => ({
       selectedNodeId: nodeStore.selectedNodeId,
+      selectedNodeContent: selectedNode?.content ?? null,
       mode: uiStore.mode,
       hasNodes: nodeStore.nodes.length > 0,
       isSelectedNodeRoot,
@@ -64,6 +67,7 @@ export function CommandPalette() {
         }
       },
       deleteNodeWithChildren: nodeStore.deleteNodeWithChildren,
+      deleteChildren: nodeStore.deleteChildren,
       enterInsertMode: uiStore.enterInsertMode,
       exitInsertMode: uiStore.exitInsertMode,
       navigateToParent: async () => {
@@ -103,8 +107,26 @@ export function CommandPalette() {
       copyNodeContent: () => {
         nodeStore.copySelectedNodeContent();
       },
+      navigateToRoot: async () => {
+        const { service } = useNodeStore.getState();
+        if (!service) return;
+        const root = await service.getRootNode();
+        if (root) nodeStore.selectNode(root.id);
+      },
+      panCanvas: (direction) => {
+        const { panCanvas } = useNodeStore.getState();
+        if (panCanvas) panCanvas(direction);
+      },
+      zoomCanvas: (direction) => {
+        const { zoomCanvas } = useNodeStore.getState();
+        if (zoomCanvas) zoomCanvas(direction);
+      },
+      exportAs: (format) => {
+        const { exportAs } = useNodeStore.getState();
+        if (exportAs) exportAs(format);
+      },
     }),
-    [nodeStore, uiStore, isSelectedNodeRoot]
+    [nodeStore, uiStore, isSelectedNodeRoot, selectedNode]
   );
 
   const availableCommands = useMemo(() => {
@@ -180,6 +202,12 @@ export function CommandPalette() {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center pt-20 z-50">
       <div className="bg-white rounded-lg shadow-xl w-96 overflow-hidden">
+        {selectedNode && (
+          <div className="px-4 py-2 bg-gray-50 border-b text-sm text-gray-600 truncate">
+            <span className="text-gray-400">Node:</span>{' '}
+            <span className="font-medium text-gray-700">{selectedNode.content || '(empty)'}</span>
+          </div>
+        )}
         <div className="px-4 py-3 border-b">
           <input
             ref={inputRef}

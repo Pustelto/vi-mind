@@ -47,6 +47,7 @@ export interface CommandDefinition {
 
 export interface CommandContext {
   selectedNodeId: NodeId | null;
+  selectedNodeContent: string | null;
   mode: Mode;
   hasNodes: boolean;
   isSelectedNodeRoot: boolean;
@@ -59,15 +60,20 @@ export interface CommandContext {
   updateNodeContent: (id: NodeId, content: string) => void;
   deleteNode: (id: NodeId) => void;
   deleteNodeWithChildren: (id: NodeId) => void;
+  deleteChildren: (id: NodeId) => void;
   enterInsertMode: () => void;
   exitInsertMode: () => void;
   navigateToParent: () => void;
   navigateToFirstChild: () => void;
   navigateToNextSibling: () => void;
   navigateToPreviousSibling: () => void;
+  navigateToRoot: () => void;
   openSearch: () => void;
   openCommandPalette: () => void;
   fitToView: () => void;
   focusCurrentNode: () => void;
   copyNodeContent: () => void;
+  panCanvas: (direction: 'up' | 'down' | 'left' | 'right') => void;
+  zoomCanvas: (direction: 'in' | 'out') => void;
+  exportAs: (format: 'svg' | 'png') => void;
 }

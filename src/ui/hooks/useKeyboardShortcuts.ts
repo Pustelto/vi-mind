@@ -28,8 +28,10 @@ export function useKeyboardShortcuts() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const selectedNode = nodeStore.nodes.find((n) => n.id === nodeStore.selectedNodeId);
       const ctx: CommandContext = {
         selectedNodeId: nodeStore.selectedNodeId,
+        selectedNodeContent: selectedNode?.content ?? null,
         mode: uiStore.mode,
         hasNodes: nodeStore.nodes.length > 0,
         isSelectedNodeRoot,
@@ -62,6 +64,7 @@ export function useKeyboardShortcuts() {
           }
         },
         deleteNodeWithChildren: nodeStore.deleteNodeWithChildren,
+        deleteChildren: nodeStore.deleteChildren,
         enterInsertMode: uiStore.enterInsertMode,
         exitInsertMode: uiStore.exitInsertMode,
         navigateToParent: async () => {
@@ -88,6 +91,12 @@ export function useKeyboardShortcuts() {
           const siblingId = await service.getPreviousSiblingId(selectedNodeId);
           if (siblingId) nodeStore.selectNode(siblingId);
         },
+        navigateToRoot: async () => {
+          const { service } = useNodeStore.getState();
+          if (!service) return;
+          const root = await service.getRootNode();
+          if (root) nodeStore.selectNode(root.id);
+        },
         openSearch: uiStore.openSearch,
         openCommandPalette: uiStore.openCommandPalette,
         fitToView: () => {
@@ -100,6 +109,18 @@ export function useKeyboardShortcuts() {
         },
         copyNodeContent: () => {
           nodeStore.copySelectedNodeContent();
+        },
+        panCanvas: (direction) => {
+          const { panCanvas } = useNodeStore.getState();
+          if (panCanvas) panCanvas(direction);
+        },
+        zoomCanvas: (direction) => {
+          const { zoomCanvas } = useNodeStore.getState();
+          if (zoomCanvas) zoomCanvas(direction);
+        },
+        exportAs: (format) => {
+          const { exportAs } = useNodeStore.getState();
+          if (exportAs) exportAs(format);
         },
       };
 

@@ -11,7 +11,6 @@ describe('Command Definitions', () => {
         expect(cmd.name).toBeDefined();
         expect(cmd.description).toBeDefined();
         expect(cmd.keybindings).toBeDefined();
-        expect(cmd.keybindings.length).toBeGreaterThan(0);
         expect(cmd.modes).toBeDefined();
         expect(cmd.modes.length).toBeGreaterThan(0);
         expect(cmd.execute).toBeDefined();
@@ -136,16 +135,24 @@ describe('Command Definitions', () => {
   });
 
   describe('view commands', () => {
-    it('should have view.fitToView command (gg)', () => {
+    it('should have view.fitToView command', () => {
       const cmd = commands.find((c) => c.id === 'view.fitToView');
       expect(cmd).toBeDefined();
-      expect(cmd?.keybindings).toContain('gg');
     });
 
     it('should have view.focusNode command (zz)', () => {
       const cmd = commands.find((c) => c.id === 'view.focusNode');
       expect(cmd).toBeDefined();
       expect(cmd?.keybindings).toContain('zz');
+    });
+  });
+
+  describe('navigation to root', () => {
+    it('should have nav.root command (gg)', () => {
+      const cmd = commands.find((c) => c.id === 'nav.root');
+      expect(cmd).toBeDefined();
+      expect(cmd?.keybindings).toContain('gg');
+      expect(cmd?.modes).toContain('normal');
     });
   });
 

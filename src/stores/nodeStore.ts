@@ -8,6 +8,9 @@ interface NodeState {
   service: MindMapService | null;
   fitToView: (() => void) | null;
   focusNode: ((nodeId: NodeId) => void) | null;
+  panCanvas: ((direction: 'up' | 'down' | 'left' | 'right') => void) | null;
+  zoomCanvas: ((direction: 'in' | 'out') => void) | null;
+  exportAs: ((format: 'svg' | 'png') => void) | null;
 
   initialize: (service: MindMapService) => Promise<void>;
   selectNode: (id: NodeId) => void;
@@ -21,8 +24,12 @@ interface NodeState {
   updateNodeContent: (id: NodeId, content: string) => Promise<void>;
   deleteNode: (id: NodeId) => Promise<{ ok: boolean; error?: string }>;
   deleteNodeWithChildren: (id: NodeId) => Promise<void>;
+  deleteChildren: (id: NodeId) => Promise<void>;
   setFitToView: (fn: () => void) => void;
   setFocusNode: (fn: (nodeId: NodeId) => void) => void;
+  setPanCanvas: (fn: (direction: 'up' | 'down' | 'left' | 'right') => void) => void;
+  setZoomCanvas: (fn: (direction: 'in' | 'out') => void) => void;
+  setExportAs: (fn: (format: 'svg' | 'png') => void) => void;
   copySelectedNodeContent: () => Promise<void>;
 }
 
@@ -32,6 +39,9 @@ export const useNodeStore = create<NodeState>((set, get) => ({
   service: null,
   fitToView: null,
   focusNode: null,
+  panCanvas: null,
+  zoomCanvas: null,
+  exportAs: null,
 
   initialize: async (service) => {
     const nodes = await service.getAllNodes();
@@ -132,8 +142,18 @@ export const useNodeStore = create<NodeState>((set, get) => ({
     set({ selectedNodeId: siblings[0]?.id ?? parent?.id ?? null });
   },
 
+  deleteChildren: async (id) => {
+    const { service, refreshNodes } = get();
+    if (!service) return;
+    await service.deleteChildren(id);
+    await refreshNodes();
+  },
+
   setFitToView: (fn) => set({ fitToView: fn }),
   setFocusNode: (fn) => set({ focusNode: fn }),
+  setPanCanvas: (fn) => set({ panCanvas: fn }),
+  setZoomCanvas: (fn) => set({ zoomCanvas: fn }),
+  setExportAs: (fn) => set({ exportAs: fn }),
 
   copySelectedNodeContent: async () => {
     const { selectedNodeId, nodes } = get();

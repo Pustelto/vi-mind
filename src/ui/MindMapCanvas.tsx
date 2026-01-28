@@ -16,11 +16,15 @@ export function MindMapCanvas() {
   const selectedNodeId = useNodeStore((state) => state.selectedNodeId);
   const setFitToView = useNodeStore((state) => state.setFitToView);
   const setFocusNode = useNodeStore((state) => state.setFocusNode);
+  const setPanCanvas = useNodeStore((state) => state.setPanCanvas);
+  const setZoomCanvas = useNodeStore((state) => state.setZoomCanvas);
+  const setExportAs = useNodeStore((state) => state.setExportAs);
   const mode = useUIStore((state) => state.mode);
 
   const layout = useMemo(() => calculateLayout(nodes), [nodes]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 800, height: 600 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -176,6 +180,119 @@ export function MindMapCanvas() {
     setFocusNode(focusNode);
   }, [focusNode, setFocusNode]);
 
+  const panCanvas = useCallback(
+    (direction: 'up' | 'down' | 'left' | 'right') => {
+      const panAmount = 100;
+      setViewBox((prev) => {
+        switch (direction) {
+          case 'up':
+            return { ...prev, y: prev.y - panAmount };
+          case 'down':
+            return { ...prev, y: prev.y + panAmount };
+          case 'left':
+            return { ...prev, x: prev.x - panAmount };
+          case 'right':
+            return { ...prev, x: prev.x + panAmount };
+        }
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    setPanCanvas(panCanvas);
+  }, [panCanvas, setPanCanvas]);
+
+  const zoomCanvas = useCallback(
+    (direction: 'in' | 'out') => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const centerX = viewBox.x + viewBox.width / 2;
+      const centerY = viewBox.y + viewBox.height / 2;
+
+      const zoomFactor = direction === 'in' ? 0.8 : 1.25;
+      const newWidth = viewBox.width * zoomFactor;
+      const newHeight = (newWidth / rect.width) * rect.height;
+
+      setViewBox({
+        x: centerX - newWidth / 2,
+        y: centerY - newHeight / 2,
+        width: newWidth,
+        height: newHeight,
+      });
+    },
+    [viewBox]
+  );
+
+  useEffect(() => {
+    setZoomCanvas(zoomCanvas);
+  }, [zoomCanvas, setZoomCanvas]);
+
+  const exportAs = useCallback(
+    (format: 'svg' | 'png') => {
+      const svg = svgRef.current;
+      if (!svg) return;
+
+      const svgClone = svg.cloneNode(true) as SVGSVGElement;
+      svgClone.setAttribute('viewBox', `${layout.bounds.minX} ${layout.bounds.minY} ${layout.bounds.width} ${layout.bounds.height}`);
+      svgClone.setAttribute('width', String(layout.bounds.width));
+      svgClone.setAttribute('height', String(layout.bounds.height));
+      svgClone.style.backgroundColor = '#f9fafb';
+
+      const svgData = new XMLSerializer().serializeToString(svgClone);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+
+      if (format === 'svg') {
+        const url = URL.createObjectURL(svgBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'mindmap.svg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        const canvas = document.createElement('canvas');
+        const scale = 2;
+        canvas.width = layout.bounds.width * scale;
+        canvas.height = layout.bounds.height * scale;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#f9fafb';
+        ctx.fillRect(0, 0, layout.bounds.width, layout.bounds.height);
+
+        const img = new Image();
+        const url = URL.createObjectURL(svgBlob);
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+          URL.revokeObjectURL(url);
+
+          canvas.toBlob((blob) => {
+            if (!blob) return;
+            const pngUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = pngUrl;
+            link.download = 'mindmap.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(pngUrl);
+          }, 'image/png');
+        };
+        img.src = url;
+      }
+    },
+    [layout.bounds]
+  );
+
+  useEffect(() => {
+    setExportAs(exportAs);
+  }, [exportAs, setExportAs]);
+
   const panToNode = useCallback(
     (nodeId: string) => {
       const nodeLayout = layout.nodes.get(nodeId);
@@ -278,6 +395,7 @@ export function MindMapCanvas() {
       style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
     >
       <svg
+        ref={svgRef}
         className="w-full h-full bg-gray-50"
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
         preserveAspectRatio="xMidYMid meet"

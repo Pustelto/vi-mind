@@ -34,6 +34,8 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
 
   const handleKeyDown = (event: KeyboardEvent, context: CommandContext): boolean => {
     const key = event.key;
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const modKey = isMac ? event.metaKey : event.ctrlKey;
 
     if (key === 'Escape') {
       const escCmd = findExactMatch('Escape', context.mode);
@@ -61,6 +63,45 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
       context.copyNodeContent();
       resetBuffer();
       return true;
+    }
+
+    if (modKey && (key === '=' || key === '+')) {
+      context.zoomCanvas('in');
+      resetBuffer();
+      return true;
+    }
+
+    if (modKey && key === '-') {
+      context.zoomCanvas('out');
+      resetBuffer();
+      return true;
+    }
+
+    if (event.ctrlKey && key === '0') {
+      context.fitToView();
+      resetBuffer();
+      return true;
+    }
+
+    if (event.ctrlKey && context.mode === 'normal') {
+      switch (key) {
+        case 'h':
+          context.panCanvas('left');
+          resetBuffer();
+          return true;
+        case 'j':
+          context.panCanvas('down');
+          resetBuffer();
+          return true;
+        case 'k':
+          context.panCanvas('up');
+          resetBuffer();
+          return true;
+        case 'l':
+          context.panCanvas('right');
+          resetBuffer();
+          return true;
+      }
     }
 
     if (timeoutId !== null) {

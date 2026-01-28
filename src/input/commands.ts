@@ -39,6 +39,15 @@ export function createCommands(): CommandDefinition[] {
       canExecute: (ctx) => ctx.selectedNodeId !== null,
     },
     {
+      id: 'nav.root',
+      name: 'Go to Root',
+      description: 'Move focus to root node',
+      keybindings: ['gg'],
+      modes: ['normal'],
+      execute: (ctx) => ctx.navigateToRoot(),
+      canExecute: (ctx) => ctx.hasNodes,
+    },
+    {
       id: 'edit.createChild',
       name: 'Create Child Node',
       description: 'Create a new child node and enter insert mode',
@@ -105,6 +114,19 @@ export function createCommands(): CommandDefinition[] {
       canExecute: (ctx) => ctx.selectedNodeId !== null,
     },
     {
+      id: 'edit.deleteChildren',
+      name: 'Delete All Children',
+      description: 'Delete all children of the selected node',
+      keybindings: ['dG'],
+      modes: ['normal'],
+      execute: (ctx) => {
+        if (ctx.selectedNodeId) {
+          ctx.deleteChildren(ctx.selectedNodeId);
+        }
+      },
+      canExecute: (ctx) => ctx.selectedNodeId !== null,
+    },
+    {
       id: 'edit.enterInsert',
       name: 'Enter Insert Mode',
       description: 'Edit the selected node content',
@@ -155,7 +177,7 @@ export function createCommands(): CommandDefinition[] {
       id: 'view.fitToView',
       name: 'Fit to View',
       description: 'Fit entire mind map to screen',
-      keybindings: ['gg'],
+      keybindings: [],
       modes: ['normal'],
       execute: (ctx) => ctx.fitToView(),
     },
@@ -189,6 +211,24 @@ export function createCommands(): CommandDefinition[] {
         }
       },
       canExecute: (ctx) => ctx.selectedNodeId !== null && !ctx.isSelectedNodeRoot,
+    },
+    {
+      id: 'export.svg',
+      name: 'Export as SVG',
+      description: 'Export mind map as SVG file',
+      keybindings: [],
+      modes: ['normal'],
+      execute: (ctx) => ctx.exportAs('svg'),
+      canExecute: (ctx) => ctx.hasNodes,
+    },
+    {
+      id: 'export.png',
+      name: 'Export as PNG',
+      description: 'Export mind map as PNG image',
+      keybindings: [],
+      modes: ['normal'],
+      execute: (ctx) => ctx.exportAs('png'),
+      canExecute: (ctx) => ctx.hasNodes,
     },
   ];
 }
