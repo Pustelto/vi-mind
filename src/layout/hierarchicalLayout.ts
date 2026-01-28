@@ -1,14 +1,38 @@
 import type { MindMapNode, NodeId, NodeLayout, EdgeLayout, LayoutResult } from '../types';
 
-const NODE_WIDTH = 120;
-const NODE_HEIGHT = 40;
-const HORIZONTAL_SPACING = 180;
-const VERTICAL_SPACING = 60;
+const MIN_NODE_WIDTH = 80;
+const MAX_NODE_WIDTH = 250;
+const NODE_PADDING_X = 24;
+const NODE_PADDING_Y = 16;
+const LINE_HEIGHT = 20;
+const CHAR_WIDTH = 8;
+const HORIZONTAL_SPACING = 60;
+const VERTICAL_SPACING = 20;
 
 interface TreeNode {
   id: NodeId;
   content: string;
   children: TreeNode[];
+  width: number;
+  height: number;
+}
+
+function calculateNodeDimensions(content: string): { width: number; height: number } {
+  const lines = content.split('\n');
+  const maxLineLength = Math.max(...lines.map((line) => line.length), 1);
+
+  const textWidth = maxLineLength * CHAR_WIDTH;
+  const width = Math.min(MAX_NODE_WIDTH, Math.max(MIN_NODE_WIDTH, textWidth + NODE_PADDING_X));
+
+  const wrappedLineCount = lines.reduce((count, line) => {
+    const charsPerLine = Math.floor((width - NODE_PADDING_X) / CHAR_WIDTH);
+    const lineWraps = Math.max(1, Math.ceil(line.length / charsPerLine));
+    return count + lineWraps;
+  }, 0);
+
+  const height = Math.max(40, wrappedLineCount * LINE_HEIGHT + NODE_PADDING_Y);
+
+  return { width, height };
 }
 
 function buildTree(nodes: MindMapNode[], rootId: NodeId | null): TreeNode | null {
@@ -28,10 +52,14 @@ function buildTree(nodes: MindMapNode[], rootId: NodeId | null): TreeNode | null
     if (!node) return null;
 
     const children = childrenMap.get(nodeId) ?? [];
+    const dimensions = calculateNodeDimensions(node.content);
+
     return {
       id: node.id,
       content: node.content,
       children: children.map((c) => buildNode(c.id)).filter((n): n is TreeNode => n !== null),
+      width: dimensions.width,
+      height: dimensions.height,
     };
   }
 
@@ -43,13 +71,13 @@ function buildTree(nodes: MindMapNode[], rootId: NodeId | null): TreeNode | null
 
 function calculateSubtreeHeight(node: TreeNode): number {
   if (node.children.length === 0) {
-    return NODE_HEIGHT;
+    return node.height;
   }
   const childrenHeight = node.children.reduce(
     (sum, child) => sum + calculateSubtreeHeight(child) + VERTICAL_SPACING,
     -VERTICAL_SPACING
   );
-  return Math.max(NODE_HEIGHT, childrenHeight);
+  return Math.max(node.height, childrenHeight);
 }
 
 export function calculateLayout(nodes: MindMapNode[]): LayoutResult {
@@ -72,12 +100,12 @@ export function calculateLayout(nodes: MindMapNode[]): LayoutResult {
     nodeLayouts.set(node.id, {
       nodeId: node.id,
       position: { x, y },
-      width: NODE_WIDTH,
-      height: NODE_HEIGHT,
+      width: node.width,
+      height: node.height,
     });
 
-    maxX = Math.max(maxX, x + NODE_WIDTH);
-    maxY = Math.max(maxY, y + NODE_HEIGHT);
+    maxX = Math.max(maxX, x + node.width);
+    maxY = Math.max(maxY, y + node.height);
 
     if (node.children.length === 0) return;
 
@@ -87,21 +115,21 @@ export function calculateLayout(nodes: MindMapNode[]): LayoutResult {
       -VERTICAL_SPACING
     );
 
-    let childY = y + NODE_HEIGHT / 2 - totalChildrenHeight / 2;
-    const childX = x + HORIZONTAL_SPACING;
+    let childY = y + node.height / 2 - totalChildrenHeight / 2;
+    const childX = x + node.width + HORIZONTAL_SPACING;
 
     for (let i = 0; i < node.children.length; i++) {
       const child = node.children[i];
       const childHeight = childrenHeights[i];
 
-      const childNodeY = childY + childHeight / 2 - NODE_HEIGHT / 2;
+      const childNodeY = childY + childHeight / 2 - child.height / 2;
 
       edges.push({
         fromId: node.id,
         toId: child.id,
         points: [
-          { x: x + NODE_WIDTH, y: y + NODE_HEIGHT / 2 },
-          { x: childX, y: childNodeY + NODE_HEIGHT / 2 },
+          { x: x + node.width, y: y + node.height / 2 },
+          { x: childX, y: childNodeY + child.height / 2 },
         ],
       });
 
