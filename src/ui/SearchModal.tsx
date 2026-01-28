@@ -14,7 +14,7 @@ export function SearchModal() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const results = query ? searchService.search(query) : [];
+  const results = query ? searchService.search(query) : nodes.map((n) => ({ nodeId: n.id, content: n.content }));
 
   useEffect(() => {
     if (isSearchOpen && inputRef.current) {
@@ -76,8 +76,8 @@ export function SearchModal() {
             className="flex-1 outline-none"
           />
         </div>
-        {results.length > 0 && (
-          <div className="max-h-64 overflow-y-auto">
+        {results.length > 0 ? (
+          <div className="max-h-80 overflow-y-auto">
             {results.map((result, i) => (
               <div
                 key={result.nodeId}
@@ -89,12 +89,11 @@ export function SearchModal() {
                   handleClose();
                 }}
               >
-                {result.content}
+                {result.content || <span className="text-gray-400 italic">Empty node</span>}
               </div>
             ))}
           </div>
-        )}
-        {query && results.length === 0 && (
+        ) : (
           <div className="px-4 py-8 text-center text-gray-500">No nodes found</div>
         )}
       </div>

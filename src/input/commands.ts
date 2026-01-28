@@ -144,6 +144,14 @@ export function createCommands(): CommandDefinition[] {
       execute: (ctx) => ctx.openSearch(),
     },
     {
+      id: 'command.openPalette',
+      name: 'Open Command Palette',
+      description: 'Open command palette to run commands',
+      keybindings: [':'],
+      modes: ['normal'],
+      execute: (ctx) => ctx.openCommandPalette(),
+    },
+    {
       id: 'view.fitToView',
       name: 'Fit to View',
       description: 'Fit entire mind map to screen',

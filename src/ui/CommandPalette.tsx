@@ -12,6 +12,7 @@ export function CommandPalette() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isSelectedNodeRoot, setIsSelectedNodeRoot] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const allCommands = useMemo(() => createCommands(), []);
 
@@ -106,18 +107,27 @@ export function CommandPalette() {
       );
   }, [allCommands, ctx, query]);
 
+  const clampedIndex = Math.min(selectedIndex, Math.max(0, availableCommands.length - 1));
+
   useEffect(() => {
     if (isCommandPaletteOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isCommandPaletteOpen]);
 
+  useEffect(() => {
+    if (listRef.current) {
+      const selectedElement = listRef.current.children[clampedIndex] as HTMLElement;
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [clampedIndex]);
+
   const handleQueryChange = (newQuery: string) => {
     setQuery(newQuery);
     setSelectedIndex(0);
   };
-
-  const clampedIndex = Math.min(selectedIndex, Math.max(0, availableCommands.length - 1));
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
@@ -167,7 +177,7 @@ export function CommandPalette() {
             className="w-full outline-none"
           />
         </div>
-        <div className="max-h-64 overflow-y-auto">
+        <div ref={listRef} className="max-h-80 overflow-y-auto">
           {availableCommands.map((cmd, i) => (
             <div
               key={cmd.id}
