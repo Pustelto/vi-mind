@@ -45,6 +45,7 @@ Layout calculation is a pure function: `(nodes) => LayoutResult`.
 Nodes have an `order` field for sibling positioning. Repository sorts children by order.
 - `createSiblingAbove` inserts before current node
 - `createSiblingBelow` inserts after current node
+- `insertBetweenParentAndChild` inserts a new parent node between selected node and its parent
 
 ### 7. Empty State Initialization
 - Store initializes with empty nodes (no auto-create root)
@@ -55,6 +56,17 @@ Nodes have an `order` field for sibling positioning. Repository sorts children b
 - Node dimensions calculated from content (line count, max line length)
 - Dimensions update live during editing via callback pattern
 - Constants: MIN_NODE_WIDTH=80, MAX_NODE_WIDTH=250
+- Word-aware text wrapping (breaks on word boundaries, hyphenates long words)
+
+### 9. Canvas Auto-Pan
+- Edited nodes are automatically panned into view with 100px padding
+- Search selection centers and zooms on the selected node
+- `focusNode` function centers and zooms on a specific node
+
+### 10. Layout Bounds Calculation
+- Layout tracks minX/minY in addition to maxX/maxY
+- Bounds include 50px padding and represent the actual content area
+- Children can extend above parent's Y position (when many children are centered)
 
 ## Testing
 
@@ -95,21 +107,27 @@ Editing:
 - `a` - Create child node (or root if empty canvas)
 - `o` - Create sibling below (disabled on root)
 - `O` - Create sibling above (disabled on root)
+- `I` - Insert parent node between selected and its parent (disabled on root)
 - `i` - Enter insert mode
 - `dd` - Delete node (leaf only)
 - `gd` - Delete node with children
 - `cin` - Clear content and enter insert mode
+- `yy` - Copy node content to clipboard
+- `Cmd/Ctrl+C` - Copy node content to clipboard
 
 Insert Mode:
 - `Enter` - New line in node text
 - `Cmd/Ctrl+Enter` - Exit insert mode and save
 - `Escape` - Exit insert mode and save
+- Empty nodes are auto-deleted on exit (focus moves to parent)
 
 View:
-- `zz` - Fit entire mind map to screen (centered)
+- `zz` - Focus and zoom on current node (centered)
+- `gg` - Fit entire mind map to screen (centered)
 
 Search:
-- `/` - Open search modal
+- `/` - Open search modal (shows all nodes when empty, centers on selection)
+- `:` - Open command palette
 - `Cmd/Ctrl+K` - Open command palette
 
 Canvas:
