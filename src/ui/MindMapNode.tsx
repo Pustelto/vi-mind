@@ -130,15 +130,17 @@ export function MindMapNodeComponent({ node, layout, isSelected }: Props) {
     <g
       transform={`translate(${position.x}, ${position.y})`}
       onClick={handleClick}
-      className="cursor-pointer"
+      style={{ cursor: 'pointer' }}
     >
       <rect
         width={width}
         height={height}
         rx={6}
-        className={`fill-white stroke-2 transition-colors ${
-          isSelected ? 'stroke-blue-500 fill-blue-50' : 'stroke-gray-300 hover:stroke-gray-400'
-        }`}
+        style={{
+          fill: isSelected ? '#eff6ff' : '#ffffff',
+          stroke: isSelected ? '#3b82f6' : '#d1d5db',
+          strokeWidth: 2,
+        }}
       />
       {isEditing ? (
         <NodeEditor
@@ -153,8 +155,7 @@ export function MindMapNodeComponent({ node, layout, isSelected }: Props) {
           x={TEXT_PADDING}
           y={textStartY}
           dominantBaseline="middle"
-          className="text-sm fill-gray-800 pointer-events-none"
-          style={{ fontSize: '14px' }}
+          style={{ fontSize: '14px', fill: '#1f2937', pointerEvents: 'none' }}
         >
           {textLines.map((line, i) => (
             <tspan key={i} x={TEXT_PADDING} dy={i === 0 ? 0 : LINE_HEIGHT}>

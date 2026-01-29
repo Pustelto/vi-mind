@@ -235,10 +235,19 @@ export function MindMapCanvas() {
       const svg = svgRef.current;
       if (!svg) return;
 
+      const padding = 40;
+      const exportBounds = {
+        minX: layout.bounds.minX - padding,
+        minY: layout.bounds.minY - padding,
+        width: layout.bounds.width + padding * 2,
+        height: layout.bounds.height + padding * 2,
+      };
+
       const svgClone = svg.cloneNode(true) as SVGSVGElement;
-      svgClone.setAttribute('viewBox', `${layout.bounds.minX} ${layout.bounds.minY} ${layout.bounds.width} ${layout.bounds.height}`);
-      svgClone.setAttribute('width', String(layout.bounds.width));
-      svgClone.setAttribute('height', String(layout.bounds.height));
+      svgClone.setAttribute('viewBox', `${exportBounds.minX} ${exportBounds.minY} ${exportBounds.width} ${exportBounds.height}`);
+      svgClone.setAttribute('width', String(exportBounds.width));
+      svgClone.setAttribute('height', String(exportBounds.height));
+      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       svgClone.style.backgroundColor = '#f9fafb';
 
       const svgData = new XMLSerializer().serializeToString(svgClone);
@@ -256,14 +265,14 @@ export function MindMapCanvas() {
       } else {
         const canvas = document.createElement('canvas');
         const scale = 2;
-        canvas.width = layout.bounds.width * scale;
-        canvas.height = layout.bounds.height * scale;
+        canvas.width = exportBounds.width * scale;
+        canvas.height = exportBounds.height * scale;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
         ctx.scale(scale, scale);
         ctx.fillStyle = '#f9fafb';
-        ctx.fillRect(0, 0, layout.bounds.width, layout.bounds.height);
+        ctx.fillRect(0, 0, exportBounds.width, exportBounds.height);
 
         const img = new Image();
         const url = URL.createObjectURL(svgBlob);
