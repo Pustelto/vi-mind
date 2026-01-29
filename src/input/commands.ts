@@ -141,9 +141,9 @@ export function createCommands(): CommandDefinition[] {
       description: 'Clear node content and enter insert mode',
       keybindings: ['cin'],
       modes: ['normal'],
-      execute: (ctx) => {
+      execute: async (ctx) => {
         if (ctx.selectedNodeId) {
-          ctx.updateNodeContent(ctx.selectedNodeId, '');
+          await ctx.updateNodeContent(ctx.selectedNodeId, '');
           ctx.enterInsertMode();
         }
       },

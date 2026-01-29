@@ -41,7 +41,7 @@ export interface CommandDefinition {
   description: string;
   keybindings: string[];
   modes: Mode[];
-  execute: (ctx: CommandContext) => void;
+  execute: (ctx: CommandContext) => void | Promise<void>;
   canExecute?: (ctx: CommandContext) => boolean;
 }
 
@@ -57,7 +57,7 @@ export interface CommandContext {
   createSiblingAbove: (siblingId: NodeId) => void;
   createSiblingBelow: (siblingId: NodeId) => void;
   insertBetweenParentAndChild: (childId: NodeId) => void;
-  updateNodeContent: (id: NodeId, content: string) => void;
+  updateNodeContent: (id: NodeId, content: string) => void | Promise<void>;
   deleteNode: (id: NodeId) => void;
   deleteNodeWithChildren: (id: NodeId) => void;
   deleteChildren: (id: NodeId) => void;
