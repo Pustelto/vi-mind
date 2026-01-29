@@ -155,7 +155,7 @@ export function MindMapNodeComponent({ node, layout, isSelected }: Props) {
           x={TEXT_PADDING}
           y={textStartY}
           dominantBaseline="middle"
-          style={{ fontSize: '14px', fill: '#1f2937', pointerEvents: 'none' }}
+          style={{ fontSize: '14px', fill: '#1f2937', pointerEvents: 'none', fontFamily: 'system-ui, -apple-system, sans-serif' }}
         >
           {textLines.map((line, i) => (
             <tspan key={i} x={TEXT_PADDING} dy={i === 0 ? 0 : LINE_HEIGHT}>
