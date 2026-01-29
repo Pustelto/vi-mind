@@ -12,6 +12,7 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
   let ctrlWPressed = false;
   let ctrlWTimeoutId: ReturnType<typeof setTimeout> | null = null;
   const TIMEOUT_MS = 1000;
+  const MODIFIER_KEYS = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'NumLock', 'ScrollLock'];
 
   const resetBuffer = () => {
     keyBuffer = '';
@@ -120,6 +121,10 @@ export function createKeyHandler(commands: CommandDefinition[]): KeyHandler {
           resetBuffer();
           return true;
       }
+    }
+
+    if (MODIFIER_KEYS.includes(key)) {
+      return false;
     }
 
     if (timeoutId !== null) {

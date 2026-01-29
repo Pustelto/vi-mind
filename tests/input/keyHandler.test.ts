@@ -392,4 +392,71 @@ describe('KeyHandler', () => {
       expect(insertCommands).toHaveLength(2);
     });
   });
+
+  describe('modifier key handling', () => {
+    it('should handle dG with realistic Shift key event sequence', () => {
+      const execute = vi.fn();
+      const commands: CommandDefinition[] = [
+        {
+          id: 'deleteChildren',
+          name: 'Delete Children',
+          description: 'Delete all children',
+          keybindings: ['dG'],
+          modes: ['normal'],
+          execute,
+        },
+      ];
+      keyHandler = createKeyHandler(commands);
+
+      keyHandler.handleKeyDown(createMockEvent('d'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('Shift'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('G', { shiftKey: true }), mockContext);
+
+      expect(execute).toHaveBeenCalledWith(mockContext);
+    });
+
+    it('should ignore standalone Shift in dd sequence', () => {
+      const execute = vi.fn();
+      const commands: CommandDefinition[] = [
+        {
+          id: 'delete',
+          name: 'Delete',
+          description: 'Delete node',
+          keybindings: ['dd'],
+          modes: ['normal'],
+          execute,
+        },
+      ];
+      keyHandler = createKeyHandler(commands);
+
+      keyHandler.handleKeyDown(createMockEvent('d'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('Shift'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('d'), mockContext);
+
+      expect(execute).toHaveBeenCalled();
+    });
+
+    it('should not add Control, Alt, or Meta to buffer', () => {
+      const execute = vi.fn();
+      const commands: CommandDefinition[] = [
+        {
+          id: 'test',
+          name: 'Test',
+          description: 'Test',
+          keybindings: ['gg'],
+          modes: ['normal'],
+          execute,
+        },
+      ];
+      keyHandler = createKeyHandler(commands);
+
+      keyHandler.handleKeyDown(createMockEvent('g'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('Control'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('Alt'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('Meta'), mockContext);
+      keyHandler.handleKeyDown(createMockEvent('g'), mockContext);
+
+      expect(execute).toHaveBeenCalled();
+    });
+  });
 });
