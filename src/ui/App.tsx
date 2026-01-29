@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNodeStore, useUIStore } from '../stores';
-import { createInMemoryRepository } from '../storage/repository';
+import { createLocalStorageRepository } from '../storage/repository';
 import { createMindMapService } from '../services/mindMapService';
 import { MindMapCanvas } from './MindMapCanvas';
 import { ModeIndicator } from './ModeIndicator';
@@ -15,7 +15,7 @@ export function App() {
   const setError = useUIStore((state) => state.setError);
 
   useEffect(() => {
-    const repository = createInMemoryRepository();
+    const repository = createLocalStorageRepository();
     const service = createMindMapService(repository);
     initialize(service);
   }, [initialize]);
