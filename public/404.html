@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViMind</title>
+  <script>
+    // Single Page App redirect for GitHub Pages
+    // Redirects 404s to index.html with the path in the URL
+    const path = window.location.pathname;
+    const search = window.location.search;
+    const hash = window.location.hash;
+    window.location.replace(
+      window.location.origin + '/vi-mind/' +
+      (path.startsWith('/vi-mind/') ? path.slice(9) : path.slice(1)) +
+      search + hash
+    );
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>
