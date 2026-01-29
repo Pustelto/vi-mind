@@ -250,6 +250,12 @@ export function MindMapCanvas() {
       svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       svgClone.style.backgroundColor = '#f9fafb';
 
+      const nodeRects = svgClone.querySelectorAll('g.nodes > g > rect');
+      nodeRects.forEach((rect) => {
+        (rect as SVGRectElement).style.fill = '#ffffff';
+        (rect as SVGRectElement).style.stroke = '#d1d5db';
+      });
+
       const svgData = new XMLSerializer().serializeToString(svgClone);
       const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
 
