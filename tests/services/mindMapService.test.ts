@@ -163,15 +163,13 @@ describe('MindMapService', () => {
       expect(await service.getNode(child.id)).toBeNull();
     });
 
-    it('should return error when deleting root node', async () => {
+    it('should allow deleting root node when it has no children', async () => {
       const root = await service.createNode('Root', null);
 
       const result = await service.deleteNode(root.id);
 
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error).toBe('Cannot delete root node');
-      }
+      expect(result.ok).toBe(true);
+      expect(await service.getNode(root.id)).toBeNull();
     });
 
     it('should return error when node has children', async () => {

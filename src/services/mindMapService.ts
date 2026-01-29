@@ -151,7 +151,6 @@ export function createMindMapService(repository: Repository): MindMapService {
   const deleteNode = async (nodeId: NodeId): Promise<Result<void, string>> => {
     const node = await repository.findById(nodeId);
     if (!node) return { ok: false, error: 'Node not found' };
-    if (node.parentId === null) return { ok: false, error: 'Cannot delete root node' };
     if (await hasChildren(nodeId)) return { ok: false, error: 'Node has children' };
     await repository.delete(nodeId);
     return { ok: true, value: undefined };

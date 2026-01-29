@@ -144,7 +144,7 @@ describe('nodeStore', () => {
       expect(state.selectedNodeId).toBe(child1.id);
     });
 
-    it('should return error when deleting root', async () => {
+    it('should allow deleting root and clear selection', async () => {
       const repository = createInMemoryRepository();
       const service = createMindMapService(repository);
       await useNodeStore.getState().initialize(service);
@@ -152,8 +152,10 @@ describe('nodeStore', () => {
 
       const result = await useNodeStore.getState().deleteNode(root!.id);
 
-      expect(result.ok).toBe(false);
-      expect(result.error).toBe('Cannot delete root node');
+      expect(result.ok).toBe(true);
+      const state = useNodeStore.getState();
+      expect(state.nodes).toHaveLength(0);
+      expect(state.selectedNodeId).toBeNull();
     });
   });
 
